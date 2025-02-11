@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar as CalendarIcon, LogOut, Settings } from 'lucide-react';
+import { Calendar as CalendarIcon, LogOut, Settings, LogIn } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Navigation() {
@@ -24,24 +24,34 @@ export default function Navigation() {
               <span className="ml-2 text-xl font-semibold text-gray-900">Calenlist</span>
             </Link>
           </div>
-          {user && (
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <Link
+                  to="/profile/settings"
+                  className="text-gray-600 hover:text-gray-900"
+                  title="Profile Settings"
+                >
+                  <Settings className="h-5 w-5" />
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="text-gray-600 hover:text-gray-900"
+                  title="Sign Out"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </>
+            ) : (
               <Link
-                to="/profile/settings"
-                className="text-gray-600 hover:text-gray-900"
-                title="Profile Settings"
+                to="/login"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               >
-                <Settings className="h-5 w-5" />
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
               </Link>
-              <button
-                onClick={handleSignOut}
-                className="text-gray-600 hover:text-gray-900"
-                title="Sign Out"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>

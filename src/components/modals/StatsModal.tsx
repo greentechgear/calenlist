@@ -24,9 +24,9 @@ interface EventFeedback {
   rating: number;
   comment: string;
   created_at: string;
-  profiles: {
-    display_name: string;
-  };
+  profiles?: {
+    display_name?: string;
+  } | null;
 }
 
 export default function StatsModal({ calendarId, isOpen, onClose }: StatsModalProps) {
@@ -71,7 +71,7 @@ export default function StatsModal({ calendarId, isOpen, onClose }: StatsModalPr
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
-        {/* Header - fixed */}
+        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold">Calendar Statistics</h2>
           <button
@@ -82,7 +82,7 @@ export default function StatsModal({ calendarId, isOpen, onClose }: StatsModalPr
           </button>
         </div>
 
-        {/* Tabs - fixed */}
+        {/* Tabs */}
         <div className="border-b">
           <div className="flex">
             <button
@@ -110,9 +110,9 @@ export default function StatsModal({ calendarId, isOpen, onClose }: StatsModalPr
           </div>
         </div>
 
-        {/* Content area - scrollable */}
+        {/* Content area */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Actions bar - fixed within content area */}
+          {/* Actions bar */}
           <div className="flex justify-between items-center p-4 border-b bg-white">
             <p className="text-gray-600">
               {activeTab === 'subscribers' 
@@ -128,7 +128,7 @@ export default function StatsModal({ calendarId, isOpen, onClose }: StatsModalPr
             </button>
           </div>
 
-          {/* Table container - scrollable */}
+          {/* Table container */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="text-center py-8">Loading...</div>
@@ -191,7 +191,7 @@ export default function StatsModal({ calendarId, isOpen, onClose }: StatsModalPr
                         {item.event_id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.profiles.display_name}
+                        {item.profiles?.display_name || 'Anonymous'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {item.rating}/5

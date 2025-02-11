@@ -72,7 +72,6 @@ REPLY_TO_EMAIL=your-support-email@yourdomain.com
 - 📚 [Documentation](https://github.com/greentechgear/calenlist/wiki)
 - 🔧 [Google Calendar Setup Guide](docs/google-calendar-setup.md)
 - 💡 [Example Calendars](https://calenlist.com/examples)
-- 👥 [Community](https://github.com/greentechgear/calenlist/discussions)
 
 ## Tech Stack
 

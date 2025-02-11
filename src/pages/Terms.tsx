@@ -25,72 +25,110 @@ export default function Terms() {
             <Scale className="w-8 h-8 text-white" />
             <h1 className="text-2xl font-bold text-white">Terms of Service</h1>
           </div>
-          <p className="mt-2 text-blue-100">Last updated: December 2, 2024</p>
+          <p className="mt-2 text-blue-100">Last updated: February 1, 2024</p>
         </div>
 
         <div className="p-6 sm:p-8">
           <div className="prose prose-blue max-w-none">
-            <h2 className="text-xl font-semibold text-gray-900">Introduction</h2>
+            <h2 className="text-xl font-semibold text-gray-900">1. Introduction</h2>
             <p className="text-gray-600">
-              Welcome to Calenlist.com ("Company," "we," "our," "us")! These Terms of Service ("Terms") govern your use of our website located at https://calenlist.com and any associated services or applications (collectively, the "Service").
+              Welcome to Calenlist ("Service"). By using our service, you agree to these terms. Please read them carefully.
             </p>
 
             <div className="mt-8 space-y-8">
               <section>
-                <h2 className="text-xl font-semibold text-gray-900">Communications</h2>
-                <p className="mt-2 text-gray-600">
-                  By creating an account, you consent to receive newsletters, promotional materials, and other communications. You may opt out of these at any time via your account preferences or the unsubscribe links in our communications.
-                </p>
+                <h2 className="text-xl font-semibold text-gray-900">2. Using Calenlist</h2>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">2.1 Account Creation</h3>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>You must provide accurate information when creating an account</li>
+                      <li>You must verify your email address</li>
+                      <li>You are responsible for maintaining the security of your account</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">2.2 Calendar Sharing</h3>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>You can create public or private calendars</li>
+                      <li>You must have the rights to share the calendar content you post</li>
+                      <li>You can control who can view your calendar's physical address</li>
+                    </ul>
+                  </div>
+                </div>
               </section>
 
               <section>
-                <h2 className="text-xl font-semibold text-gray-900">Purchases</h2>
+                <h2 className="text-xl font-semibold text-gray-900">3. User Content</h2>
                 <p className="mt-2 text-gray-600">
-                  Purchases made through the Service require the provision of accurate payment information. You agree that:
+                  You retain ownership of your calendars and event content. By sharing content through Calenlist, you grant us permission to display and distribute it according to your chosen privacy settings.
+                </p>
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium text-gray-900">3.1 Prohibited Content</h3>
+                  <ul className="mt-2 list-disc list-inside text-gray-600">
+                    <li>Illegal or harmful content</li>
+                    <li>Spam or misleading information</li>
+                    <li>Content that violates others' rights</li>
+                    <li>Malicious software or harmful code</li>
+                  </ul>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900">4. Features and Limitations</h2>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">4.1 Calendar Integration</h3>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>We support Google Calendar integration</li>
+                      <li>Calendar sync frequency depends on our service capabilities</li>
+                      <li>You must comply with Google Calendar's terms of service</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">4.2 Event Feedback</h3>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>Subscribers can leave feedback on events</li>
+                      <li>Feedback must be honest and respectful</li>
+                      <li>Calendar owners can view feedback statistics</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900">5. Privacy and Data</h2>
+                <p className="mt-2 text-gray-600">
+                  We collect and process data as described in our <Link to="/privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</Link>. This includes:
                 </p>
                 <ul className="mt-2 list-disc list-inside text-gray-600">
-                  <li>You are authorized to use the payment method provided.</li>
-                  <li>The information you provide is accurate.</li>
-                  <li>Stripe handles all payment processing, and their Privacy Policy and Terms apply.</li>
+                  <li>Account information</li>
+                  <li>Calendar data and event details</li>
+                  <li>Usage statistics and feedback</li>
+                  <li>Physical addresses (when provided)</li>
                 </ul>
               </section>
 
               <section>
-                <h2 className="text-xl font-semibold text-gray-900">Subscriptions</h2>
+                <h2 className="text-xl font-semibold text-gray-900">6. Termination</h2>
                 <p className="mt-2 text-gray-600">
-                  Subscriptions renew automatically unless canceled before the end of the current billing period. Cancellation can be completed through your account settings. Failure to process a payment may result in suspension of service.
+                  We may suspend or terminate your account for violations of these terms. You may delete your account at any time.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-xl font-semibold text-gray-900">Free Trial</h2>
+                <h2 className="text-xl font-semibold text-gray-900">7. Changes to Terms</h2>
                 <p className="mt-2 text-gray-600">
-                  Free trials transition to paid plans unless canceled before the trial ends. Clear instructions for cancellation are provided during the trial sign-up process.
+                  We may update these terms from time to time. We will notify you of significant changes via email or through the service.
                 </p>
               </section>
 
               <section>
-                <h2 className="text-xl font-semibold text-gray-900">Content</h2>
+                <h2 className="text-xl font-semibold text-gray-900">8. Contact Us</h2>
                 <p className="mt-2 text-gray-600">
-                  Users retain rights to the content they upload. By sharing content on the Service, you grant us a license to use, display, and distribute it for the operation of the Service.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-xl font-semibold text-gray-900">Prohibited Uses</h2>
-                <p className="mt-2 text-gray-600">Users may not:</p>
-                <ul className="mt-2 list-disc list-inside text-gray-600">
-                  <li>Engage in fraudulent or unlawful activities</li>
-                  <li>Upload harmful software</li>
-                  <li>Disrupt the Service's functionality or integrity</li>
-                  <li>Violate intellectual property rights</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-xl font-semibold text-gray-900">Contact Us</h2>
-                <p className="mt-2 text-gray-600">
-                  For inquiries about these Terms or the Service, please contact us at{' '}
+                  For questions about these terms, please contact us at{' '}
                   <a href="mailto:support@calenlist.com" className="text-blue-600 hover:text-blue-700">
                     support@calenlist.com
                   </a>

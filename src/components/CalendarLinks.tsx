@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { Calendar as CalendarType } from '../../types/calendar';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { Calendar as CalendarType } from '../types/calendar';
 import { Twitch, Youtube, Calendar, Users, Globe2, Mail, Bell, Lock, AlertCircle, ShieldAlert } from 'lucide-react';
-import { useGoogleCalendar } from '../../hooks/useGoogleCalendar';
+import { useGoogleCalendar } from '../hooks/useGoogleCalendar';
 import NextEventCountdown from './NextEventCountdown';
-import SubscriptionPrompt from '../../components/SubscriptionPrompt';
+import SubscriptionPrompt from '../components/SubscriptionPrompt';
 import EventFeedbackSection from './EventFeedbackSection';
-import { getGoogleCalendarSubscribeUrl } from '../../utils/calendarUrl';
-import { toast } from '../../utils/toast';
+import { getGoogleCalendarSubscribeUrl } from '../utils/calendarUrl';
+import { toast } from '../utils/toast';
 
 interface CalendarLinksProps {
   calendar: CalendarType;
@@ -25,22 +25,28 @@ export default function CalendarLinks({ calendar, isSubscribed, onSubscriptionCh
   const handleSubscribe = async () => {
     if (!user) return;
 
-    // Check email verification
-    if (!user.email_confirmed_at) {
-      toast.error('Please verify your email address before subscribing');
-      return;
-    }
-
     try {
       setSubscribing(true);
-      const { error } = await supabase
+      
+      // First create the subscription in the database
+      const { error: subscriptionError } = await supabase
         .from('subscriptions')
-        .insert([{ user_id: user.id, calendar_id: calendar.id }]);
+        .insert([{ 
+          user_id: user.id, 
+          calendar_id: calendar.id 
+        }]);
 
-      if (error) throw error;
+      if (subscriptionError) {
+        // If error is not a duplicate key error, throw it
+        if (!subscriptionError.message.includes('duplicate key')) {
+          throw subscriptionError;
+        }
+      }
 
       // Open Google Calendar's "Add by URL" page
       window.open(getGoogleCalendarSubscribeUrl(calendar.google_calendar_url), '_blank');
+      
+      // Update UI
       onSubscriptionChange();
       toast.success('Successfully subscribed to calendar');
     } catch (err) {
@@ -100,57 +106,13 @@ export default function CalendarLinks({ calendar, isSubscribed, onSubscriptionCh
         <NextEventCountdown events={events} />
         {user ? (
           <>
-            {!user.email_confirmed_at && !calendar.is_public && (
-              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <div className="flex items-start">
-                  <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-medium text-amber-800">Private Calendar - Email Verification Required</h4>
-                    <p className="mt-1 text-sm text-amber-700">
-                      This is a private calendar. Email verification is required to subscribe.
-                    </p>
-                    <button
-                      onClick={handleResendVerification}
-                      disabled={resendingVerification}
-                      className="mt-2 inline-flex items-center text-sm font-medium text-amber-800 hover:text-amber-900"
-                    >
-                      <Mail className="h-4 w-4 mr-1.5" />
-                      {resendingVerification ? 'Sending...' : 'Resend verification email'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {!user.email_confirmed_at && calendar.is_public && (
-              <div className="mb-4 p-4 bg-yellow-50 rounded-lg">
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-medium text-yellow-800">Email Verification Required</h4>
-                    <p className="mt-1 text-sm text-yellow-700">
-                      Please verify your email address to subscribe to calendars.
-                    </p>
-                    <button
-                      onClick={handleResendVerification}
-                      disabled={resendingVerification}
-                      className="mt-2 inline-flex items-center text-sm font-medium text-yellow-800 hover:text-yellow-900"
-                    >
-                      <Mail className="h-4 w-4 mr-1.5" />
-                      {resendingVerification ? 'Sending...' : 'Resend verification email'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
             <button
               onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
-              disabled={subscribing || !user.email_confirmed_at}
+              disabled={subscribing}
               className={`w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium ${
                 isSubscribed
                   ? 'text-gray-700 bg-gray-100 hover:bg-gray-200'
-                  : user.email_confirmed_at
-                  ? 'text-white bg-purple-600 hover:bg-purple-700'
-                  : 'text-gray-500 bg-gray-100 cursor-not-allowed'
+                  : 'text-white bg-purple-600 hover:bg-purple-700'
               } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50`}
             >
               <Users className="h-4 w-4 mr-2" />

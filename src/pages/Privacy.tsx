@@ -25,68 +25,148 @@ export default function Privacy() {
             <Shield className="w-8 h-8 text-white" />
             <h1 className="text-2xl font-bold text-white">Privacy Policy</h1>
           </div>
-          <p className="mt-2 text-indigo-100">Effective Date: December 2, 2024</p>
+          <p className="mt-2 text-indigo-100">Last updated: February 1, 2024</p>
         </div>
 
         <div className="p-6 sm:p-8">
           <div className="prose prose-indigo max-w-none">
-            <h2 className="text-xl font-semibold text-gray-900">Introduction</h2>
+            <h2 className="text-xl font-semibold text-gray-900">1. Introduction</h2>
             <p className="text-gray-600">
-              Welcome to Calenlist.com ("Company," "we," "our," "us"). This Privacy Policy outlines how we collect, use, disclose, and safeguard your information when you visit https://calenlist.com or use our services.
+              This Privacy Policy explains how Calenlist ("we," "our," or "us") collects, uses, and protects your personal information when you use our calendar sharing platform.
             </p>
 
             <div className="mt-8 space-y-8">
               <section>
-                <h2 className="text-xl font-semibold text-gray-900">Information Collection and Use</h2>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">Personal Data</h3>
-                <p className="mt-2 text-gray-600">We may collect:</p>
-                <ul className="mt-2 list-disc list-inside text-gray-600">
-                  <li>Name, email address, and contact details</li>
-                  <li>Account preferences and settings</li>
-                  <li>Payment information (processed by Stripe)</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-xl font-semibold text-gray-900">Tracking Technologies</h2>
-                <p className="mt-2 text-gray-600">We use cookies and similar technologies:</p>
-                <ul className="mt-2 list-disc list-inside text-gray-600">
-                  <li>Session Cookies: To maintain session integrity</li>
-                  <li>Preference Cookies: To remember your settings</li>
-                  <li>Analytics Cookies: To track usage and improve functionality</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-xl font-semibold text-gray-900">Your Rights</h2>
+                <h2 className="text-xl font-semibold text-gray-900">2. Information We Collect</h2>
                 <div className="mt-4 space-y-4">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">GDPR Rights (EU/EEA Residents)</h3>
+                    <h3 className="text-lg font-medium text-gray-900">2.1 Account Information</h3>
                     <ul className="mt-2 list-disc list-inside text-gray-600">
-                      <li>Access, update, or delete your data</li>
-                      <li>Restrict or object to data processing</li>
-                      <li>Request data portability</li>
-                      <li>Withdraw consent for processing activities</li>
+                      <li>Email address</li>
+                      <li>Display name</li>
+                      <li>Profile information (optional)</li>
                     </ul>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">CCPA Rights (California Residents)</h3>
+                    <h3 className="text-lg font-medium text-gray-900">2.2 Calendar Data</h3>
                     <ul className="mt-2 list-disc list-inside text-gray-600">
-                      <li>Request details about collected Personal Data</li>
-                      <li>Request deletion of your data</li>
-                      <li>Opt-out of data sharing (we don't sell your data)</li>
+                      <li>Google Calendar URLs</li>
+                      <li>Event details and descriptions</li>
+                      <li>Physical addresses (when provided)</li>
+                      <li>Calendar privacy settings</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">2.3 Usage Data</h3>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>Subscription information</li>
+                      <li>Event feedback and ratings</li>
+                      <li>Calendar viewing statistics</li>
                     </ul>
                   </div>
                 </div>
               </section>
 
               <section>
-                <h2 className="text-xl font-semibold text-gray-900">Contact Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900">3. How We Use Your Information</h2>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">3.1 Essential Services</h3>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>Managing your account and calendars</li>
+                      <li>Processing calendar subscriptions</li>
+                      <li>Displaying event information</li>
+                      <li>Handling event feedback</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">3.2 Communications</h3>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>Email verification</li>
+                      <li>Service notifications</li>
+                      <li>Important updates about your calendars</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900">4. Information Sharing</h2>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">4.1 Public Information</h3>
+                    <p className="mt-2 text-gray-600">
+                      For public calendars, the following information is visible to all users:
+                    </p>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>Calendar name and description</li>
+                      <li>Event details and times</li>
+                      <li>Creator's display name</li>
+                      <li>Physical address (if set to public)</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">4.2 Private Information</h3>
+                    <p className="mt-2 text-gray-600">
+                      For private calendars, information is only shared with:
+                    </p>
+                    <ul className="mt-2 list-disc list-inside text-gray-600">
+                      <li>Users you explicitly share with</li>
+                      <li>Subscribers (for subscriber-only content)</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900">5. Data Security</h2>
                 <p className="mt-2 text-gray-600">
-                  For questions or concerns about this Privacy Policy, please contact us at{' '}
-                  <a href="mailto:support@calenlist.com" className="text-indigo-600 hover:text-indigo-700">
-                    support@calenlist.com
+                  We protect your data using:
+                </p>
+                <ul className="mt-2 list-disc list-inside text-gray-600">
+                  <li>Secure HTTPS encryption</li>
+                  <li>Database encryption at rest</li>
+                  <li>Access controls and authentication</li>
+                  <li>Regular security audits</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900">6. Third-Party Services</h2>
+                <p className="mt-2 text-gray-600">
+                  We integrate with the following services:
+                </p>
+                <ul className="mt-2 list-disc list-inside text-gray-600">
+                  <li>Google Calendar (for calendar integration)</li>
+                  <li>Supabase (for database and authentication)</li>
+                  <li>Resend (for email notifications)</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900">7. Your Rights</h2>
+                <p className="mt-2 text-gray-600">
+                  You have the right to:
+                </p>
+                <ul className="mt-2 list-disc list-inside text-gray-600">
+                  <li>Access your personal data</li>
+                  <li>Correct inaccurate data</li>
+                  <li>Delete your account and data</li>
+                  <li>Export your calendar data</li>
+                  <li>Control your privacy settings</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="text-xl font-semibold text-gray-900">8. Contact Information</h2>
+                <p className="mt-2 text-gray-600">
+                  For privacy-related questions or concerns, please contact us at{' '}
+                  <a href="mailto:privacy@calenlist.com" className="text-blue-600 hover:text-blue-700">
+                    privacy@calenlist.com
                   </a>
                 </p>
               </section>

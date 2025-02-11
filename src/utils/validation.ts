@@ -4,7 +4,7 @@ import { isValidCalendarUrl } from './calendarUrl';
 const PATTERNS = {
   EMAIL: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
   URL: /^https?:\/\/.+/,
-  YOUTUBE_URL: /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]+$/,
+  VIDEO_URL: /^https?:\/\/((?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]+|(?:www\.)?vimeo\.com\/[0-9]+|(?:www\.)?(?:dailymotion\.com\/(?:video|embed\/video)\/|dai\.ly\/)[a-zA-Z0-9]+)$/,
   DISPLAY_NAME: /^[a-zA-Z0-9\s._-]{2,50}$/,
   PRICE: /^\d+(\.\d{1,2})?$/
 };
@@ -14,7 +14,7 @@ export const VALIDATION_MESSAGES = {
   REQUIRED: 'This field is required',
   INVALID_EMAIL: 'Please enter a valid email address',
   INVALID_URL: 'Please enter a valid URL',
-  INVALID_YOUTUBE_URL: 'Please enter a valid YouTube URL',
+  INVALID_VIDEO_URL: 'Please enter a valid YouTube, Vimeo, or Dailymotion URL',
   INVALID_DISPLAY_NAME: 'Display name can only contain letters, numbers, spaces, and ._-',
   INVALID_PRICE: 'Please enter a valid price',
   INVALID_CALENDAR_URL: 'Please enter a valid calendar URL',
@@ -40,8 +40,8 @@ export const validators = {
     return PATTERNS.URL.test(value);
   },
 
-  youtubeUrl: (value: string): boolean => {
-    return PATTERNS.YOUTUBE_URL.test(value);
+  videoUrl: (value: string): boolean => {
+    return PATTERNS.VIDEO_URL.test(value);
   },
 
   displayName: (value: string): boolean => {
@@ -127,8 +127,8 @@ export const commonRules = {
     message
   }),
 
-  youtubeUrl: (message = VALIDATION_MESSAGES.INVALID_YOUTUBE_URL): ValidationRule => ({
-    validator: validators.youtubeUrl,
+  videoUrl: (message = VALIDATION_MESSAGES.INVALID_VIDEO_URL): ValidationRule => ({
+    validator: validators.videoUrl,
     message
   }),
 

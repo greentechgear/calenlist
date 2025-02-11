@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, isBefore, isAfter } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar';
 import EventChiclet from '../calendar/EventChiclet';
@@ -175,14 +175,33 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
             // Combine events from all calendars for this day
             const dayEvents = calendarData.flatMap(cal => 
               cal.events
-                .filter(event => isSameDay(new Date(event.start), day))
-                .map(event => ({
-                  ...event,
-                  calendarId: cal.calendarId,
-                  calendarName: cal.calendarName,
-                  creatorName: cal.creatorName,
-                  banner: cal.banner
-                }))
+                .filter(event => {
+                  const eventStart = new Date(event.start);
+                  const eventEnd = new Date(event.end);
+                  
+                  // Check if this day falls within the event's duration
+                  return isWithinInterval(day, { start: eventStart, end: eventEnd }) ||
+                         isSameDay(eventStart, day) ||
+                         isSameDay(eventEnd, day);
+                })
+                .map(event => {
+                  const eventStart = new Date(event.start);
+                  const eventEnd = new Date(event.end);
+                  const isFirstDay = isSameDay(day, eventStart);
+                  const isLastDay = isSameDay(day, eventEnd);
+                  const isMiddleDay = isAfter(day, eventStart) && isBefore(day, eventEnd);
+
+                  return {
+                    ...event,
+                    calendarId: cal.calendarId,
+                    calendarName: cal.calendarName,
+                    creatorName: cal.creatorName,
+                    banner: cal.banner,
+                    isFirstDay,
+                    isLastDay,
+                    isMiddleDay
+                  };
+                })
             ).sort((a, b) => a.start.getTime() - b.start.getTime());
 
             return (
@@ -215,6 +234,9 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
                         showLocation={true}
                         calendarId={event.calendarId}
                         color={getBannerStyle(event.banner).color}
+                        isFirstDay={event.isFirstDay}
+                        isLastDay={event.isLastDay}
+                        isMiddleDay={event.isMiddleDay}
                       />
                     </div>
                   ))}

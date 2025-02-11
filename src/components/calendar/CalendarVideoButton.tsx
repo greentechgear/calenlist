@@ -14,7 +14,7 @@ export default function CalendarVideoButton({ onClick, color = '#000000' }: Cale
       style={{ color }}
     >
       <Play className="h-4 w-4" />
-      <span>Watch Demo</span>
+      <span>Watch</span>
     </button>
   );
 }

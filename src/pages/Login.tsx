@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Calendar, Mail } from 'lucide-react';
+import { Calendar, Mail, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import SEO from '../components/SEO';
 
@@ -10,10 +10,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn, signUp, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,9 +33,23 @@ export default function Login() {
     const calendarId = params.get('calendarId');
     const template = params.get('template');
 
-    if (returnTo) return returnTo;
-    if (template) return `/dashboard?template=${template}`;
-    if (calendarId) return `/calendar/${calendarId}`;
+    // First priority: explicit return path
+    if (returnTo) {
+      // Ensure returnTo starts with a slash
+      return returnTo.startsWith('/') ? returnTo : `/${returnTo}`;
+    }
+    
+    // Second priority: calendar ID
+    if (calendarId) {
+      return `/calendar/${calendarId}`;
+    }
+    
+    // Third priority: template
+    if (template) {
+      return `/dashboard?template=${template}`;
+    }
+    
+    // Default fallback
     return '/dashboard';
   };
 
@@ -71,6 +87,35 @@ export default function Login() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) throw error;
+      
+      setVerificationSent(true);
+      setError('Password reset instructions have been sent to your email');
+      // Reset verification sent state after 1 minute
+      setTimeout(() => setVerificationSent(false), 60000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send reset email';
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -92,7 +137,8 @@ export default function Login() {
         await signIn(email, password);
       }
       
-      navigate(redirectPath);
+      // Navigate to the redirect path
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An error occurred';
       
@@ -110,8 +156,74 @@ export default function Login() {
     }
   };
 
-  const params = new URLSearchParams(location.search);
-  const calendarId = params.get('calendarId');
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
+        <SEO 
+          title="Reset Password" 
+          description="Reset your password to regain access to your account"
+        />
+
+        <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+          <div className="text-center">
+            <div className="flex justify-center">
+              <Calendar className="h-12 w-12 text-purple-600" />
+            </div>
+            <h2 className="mt-6 text-3xl font-bold text-gray-900">Reset Password</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Enter your email address and we'll send you instructions to reset your password
+            </p>
+          </div>
+
+          {error && (
+            <div className={`p-3 rounded-md text-sm ${
+              error.includes('have been sent') 
+                ? 'bg-green-50 text-green-600'
+                : 'bg-red-50 text-red-600'
+            }`}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleForgotPassword} className="mt-8 space-y-6">
+            <div>
+              <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Sending...' : 'Send Reset Instructions'}
+              </button>
+            </div>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(false)}
+                className="text-sm text-purple-600 hover:text-purple-500"
+              >
+                Back to login
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
@@ -129,9 +241,7 @@ export default function Login() {
             {isSignUp ? 'Join Calenlist' : 'Welcome back'}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            {calendarId 
-              ? "Create an account to subscribe and get notified about upcoming events"
-              : "Subscribe to calendars and stay updated with events from your favorite creators"}
+            Subscribe to calendars and stay updated with events that matter to you.
           </p>
         </div>
 
@@ -190,16 +300,41 @@ export default function Login() {
               <label htmlFor="password" className="text-sm font-medium text-gray-700">
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-              />
+              <div className="mt-1 relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
+
+          {!isSignUp && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(true)}
+                className="text-sm text-purple-600 hover:text-purple-500"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"

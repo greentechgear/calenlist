@@ -65,12 +65,6 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
     e.preventDefault();
     if (!user) return;
 
-    if (!user.email_confirmed_at) {
-      toast.error('Please verify your email address before creating a calendar');
-      setError('Email verification required. Please check your inbox and verify your email address.');
-      return;
-    }
-
     const errors = validateCalendarForm({
       name,
       description,

@@ -1,30 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MousePointerClick, Sparkles } from 'lucide-react';
+import { Calendar, ArrowRight, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import TopCalendars from '../components/home/TopCalendars';
 import AnimatedBackground from '../components/home/AnimatedBackground';
 import MarketingSection from '../components/MarketingSection';
 import IntegrationSteps from '../components/home/IntegrationSteps';
 import CalendarTemplates from '../components/home/CalendarTemplates';
-import ExampleCalendar from '../components/home/ExampleCalendar';
 import CalenlistersShowcase from '../components/home/CalenlistersShowcase';
 import FAQ from '../components/home/FAQ';
 import { getTopCalendars } from '../services/calendarService';
 import type { Calendar as CalendarType } from '../types/calendar';
 import SEO from '../components/SEO';
+import CategoryBadge from '../components/CategoryBadge';
 
 export default function Home() {
   const { user } = useAuth();
-  const [topCalendars, setTopCalendars] = useState<CalendarType[]>([]);
+  const [popularCalendars, setPopularCalendars] = useState<CalendarType[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTopCalendars();
+    loadPopularCalendars();
   }, []);
 
-  const loadTopCalendars = async () => {
-    const calendars = await getTopCalendars();
-    setTopCalendars(calendars);
+  const loadPopularCalendars = async () => {
+    try {
+      const calendars = await getTopCalendars(6); // Get top 6 calendars
+      setPopularCalendars(calendars);
+    } catch (error) {
+      console.error('Error loading popular calendars:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,23 +68,91 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Always show marketing features, even for logged in users */}
       <MarketingSection />
       
       {!user && (
         <>
           <IntegrationSteps />
-          <ExampleCalendar />
         </>
       )}
       
       <CalendarTemplates />
+
+      {/* Popular Calendars Section */}
+      {popularCalendars.length > 0 && (
+        <div className="bg-white py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Popular Calendars
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Discover trending calendars from our community
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {popularCalendars.map(calendar => (
+                <div key={calendar.id} className="group relative">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-500"></div>
+                  <div className="relative bg-white rounded-lg overflow-hidden shadow-sm">
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                        {calendar.name}
+                      </h3>
+                      
+                      <div className="flex flex-col gap-2 mb-4">
+                        {calendar.profiles?.display_name && (
+                          <span className="text-sm text-gray-500">
+                            by {calendar.profiles.display_name}
+                          </span>
+                        )}
+                        {calendar.category_id && (
+                          <CategoryBadge categoryId={calendar.category_id} size="sm" />
+                        )}
+                      </div>
+
+                      {calendar.description && (
+                        <p className="text-gray-600 mb-4 line-clamp-2">
+                          {calendar.description}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <Link
+                          to={`/calendar/${calendar.id}`}
+                          className="inline-flex items-center text-purple-600 hover:text-purple-700"
+                        >
+                          <span className="font-medium">View Calendar</span>
+                          <ArrowRight className="h-4 w-4 ml-1" />
+                        </Link>
+
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Users className="h-4 w-4 mr-1" />
+                          {calendar.subscriber_count?.toLocaleString() || 0}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-12">
+              <Link
+                to="/examples"
+                className="inline-flex items-center px-6 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors"
+              >
+                View More Calendars
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CalenlistersShowcase />
       <FAQ />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <TopCalendars calendars={topCalendars} />
-      </div>
     </div>
   );
 }

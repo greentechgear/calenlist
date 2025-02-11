@@ -1,5 +1,6 @@
 import { isValidCalendarUrl, convertToIcsUrl } from '../utils/calendarUrl';
 import { supabase } from '../lib/supabase';
+import { parseRecurrenceRule } from '../utils/recurrenceParser';
 
 export interface CalendarEvent {
   id: string;
@@ -7,6 +8,10 @@ export interface CalendarEvent {
   start: Date;
   end: Date;
   description?: string;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
+  calendarName?: string;
+  creatorName?: string;
 }
 
 export async function fetchGoogleCalendarEvents(calendarUrl: string): Promise<CalendarEvent[]> {
@@ -24,22 +29,15 @@ export async function fetchGoogleCalendarEvents(calendarUrl: string): Promise<Ca
   const icsUrl = convertToIcsUrl(calendarUrl);
 
   try {
-    // Call the CORS proxy function
-    const { data, error } = await supabase.functions.invoke('cors-proxy', {
-      body: { calendarUrl: icsUrl }
-    });
-
-    if (error) {
-      console.error('CORS proxy error:', error);
-      throw new Error('Failed to fetch calendar data. Please try again later.');
-    }
-
-    if (!data?.data) {
+    // Call the CORS proxy function with retries
+    const response = await fetchWithRetries(icsUrl);
+    
+    if (!response?.data) {
       console.error('No data received from CORS proxy');
       return [];
     }
 
-    const events = parseICS(data.data);
+    const events = parseICS(response.data);
     return events;
   } catch (error) {
     console.error('Error fetching calendar events:', error);
@@ -47,9 +45,34 @@ export async function fetchGoogleCalendarEvents(calendarUrl: string): Promise<Ca
   }
 }
 
+async function fetchWithRetries(icsUrl: string, maxRetries = 3): Promise<any> {
+  let lastError;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const { data, error } = await supabase.functions.invoke('cors-proxy', {
+        body: { calendarUrl: icsUrl }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Attempt ${attempt + 1} failed:`, err);
+      
+      if (attempt < maxRetries - 1) {
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 function parseICS(icsData: string): CalendarEvent[] {
   const events: CalendarEvent[] = [];
-  const lines = icsData.split('\n');
+  const lines = icsData.split(/\r\n|\n|\r/);
   let currentEvent: Partial<CalendarEvent> | null = null;
   let currentValue = '';
 
@@ -66,7 +89,13 @@ function parseICS(icsData: string): CalendarEvent[] {
       currentEvent = {};
     } else if (currentLine === 'END:VEVENT' && currentEvent) {
       if (currentEvent.id && currentEvent.title && currentEvent.start && currentEvent.end) {
-        events.push(currentEvent as CalendarEvent);
+        // If event has recurrence rule, expand it
+        if (currentEvent.recurrenceRule) {
+          const expandedEvents = parseRecurrenceRule(currentEvent as CalendarEvent, currentEvent.recurrenceRule);
+          events.push(...expandedEvents);
+        } else {
+          events.push(currentEvent as CalendarEvent);
+        }
       }
       currentEvent = null;
     } else if (currentEvent) {
@@ -97,6 +126,10 @@ function parseICS(icsData: string): CalendarEvent[] {
         case 'DTEND':
           currentEvent.end = parseICSDateTime(value, parameters);
           break;
+        case 'RRULE':
+          currentEvent.recurrenceRule = value;
+          currentEvent.isRecurring = true;
+          break;
       }
     }
   }
@@ -121,6 +154,7 @@ function parseICSDateTime(value: string, parameters: Map<string, string>): Date 
     if (isUTC) {
       return new Date(Date.UTC(year, month, day, hour, minute, second));
     } else if (tzid) {
+      // For now, treat TZID dates as local - in future could add timezone conversion
       return new Date(year, month, day, hour, minute, second);
     } else {
       return new Date(year, month, day, hour, minute, second);

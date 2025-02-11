@@ -1,7 +1,22 @@
 [build]
   functions = "netlify/functions"
 
+[context.production]
+  command = "npm run build"
+  publish = "dist"
+  environment = { NODE_VERSION = "18" }
+
+[context.staging]
+  command = "npm run build:staging"
+  publish = "dist"
+  environment = { NODE_VERSION = "18" }
+
 [[redirects]]
   from = "/.netlify/functions/*"
   to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200

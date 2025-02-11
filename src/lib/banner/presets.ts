@@ -21,7 +21,7 @@ export const bannerPresets: CalendarBanner[] = [
     name: 'Sunset Glow',
     color: '#FFF7ED',
     textColor: '#EA580C',
-    pattern: 'circles'
+    pattern: 'checkerboard'
   },
   {
     id: 'rose-garden',
@@ -35,21 +35,21 @@ export const bannerPresets: CalendarBanner[] = [
     name: 'Amber Sunset',
     color: '#FFFBEB',
     textColor: '#D97706',
-    pattern: 'waves'
+    pattern: 'topography'
   },
   {
     id: 'violet-night',
     name: 'Violet Night',
     color: '#FAF5FF',
     textColor: '#9333EA',
-    pattern: 'zigzag'
+    pattern: 'circuit'
   },
   {
     id: 'arctic-frost',
     name: 'Arctic Frost',
     color: '#F0F9FF',
     textColor: '#0369A1',
-    pattern: 'diagonal'
+    pattern: 'triangles'
   },
   {
     id: 'sage-meadow',

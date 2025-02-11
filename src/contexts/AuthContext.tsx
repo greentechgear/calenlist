@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const params = new URLSearchParams(hash.substring(1));
           const accessToken = params.get('access_token');
           const refreshToken = params.get('refresh_token');
+          const type = params.get('type');
           
           if (accessToken && refreshToken) {
             // Set the session
@@ -42,10 +43,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (error) throw error;
             if (session?.user) {
               setUser(session.user);
-              // Clear hash and redirect to dashboard
-              window.history.replaceState(null, '', '/dashboard');
-              navigate('/dashboard', { replace: true });
-              toast.success('Email confirmed successfully!');
+              
+              // Handle different confirmation types
+              if (type === 'recovery') {
+                // Password reset flow
+                window.history.replaceState(null, '', '/reset-password');
+                navigate('/reset-password', { replace: true });
+              } else {
+                // Normal email confirmation flow
+                window.history.replaceState(null, '', '/dashboard');
+                navigate('/dashboard', { replace: true });
+                toast.success('Email confirmed successfully!');
+              }
             }
           }
         } catch (error) {

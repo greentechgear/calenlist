@@ -1,4 +1,3 @@
-{/* Update Calendar type to remove payment-related fields */}
 export interface Calendar {
   id: string;
   user_id: string;
@@ -20,4 +19,6 @@ export interface CalendarEvent {
   end: Date;
   description?: string;
   calendarName?: string;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
 }

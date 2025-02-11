@@ -219,18 +219,19 @@ export default function BasicSettingsForm({
 
         {/* Demo Video URL field */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Demo Video URL <span className="text-gray-500">(YouTube only)</span>
+          <label htmlFor="demoVideoUrl" className="block text-sm font-medium text-gray-700">
+            Add a video URL to showcase your calendar
           </label>
           <input
             type="url"
+            id="demoVideoUrl"
             value={demoVideoUrl}
             onChange={(e) => onDemoVideoUrlChange(e.target.value)}
-            placeholder="https://youtube.com/watch?v=..."
+            placeholder="YouTube, Vimeo, or Dailymotion URL"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
           />
           <p className="mt-1 text-sm text-gray-500">
-            Add a YouTube video URL to showcase your calendar
+            Add a video URL to showcase your calendar (supports YouTube, Vimeo, and Dailymotion)
           </p>
           {validationErrors.demoVideo && (
             <p className="mt-1 text-sm text-red-500">{validationErrors.demoVideo}</p>

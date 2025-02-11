@@ -13,6 +13,8 @@ import CategoryBadge from '../components/CategoryBadge';
 import CalendarDescription from '../components/calendar/CalendarDescription';
 import CalendarVideo from '../components/calendar/CalendarVideo';
 import CalendarVideoButton from '../components/calendar/CalendarVideoButton';
+import PrivateCalendarShare from '../components/calendar/PrivateCalendarShare';
+import ShareCalendarModal from '../components/settings/ShareCalendarModal';
 import PaymentInfo from '../components/calendar/PaymentInfo';
 import StatsModal from '../components/modals/StatsModal';
 import ShareButton from '../components/ShareButton';
@@ -29,6 +31,7 @@ export default function Calendar() {
   const [subscriberCount, setSubscriberCount] = useState(0);
   const [showStats, setShowStats] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { name: calendarName } = useGoogleCalendarInfo(
@@ -60,7 +63,7 @@ export default function Calendar() {
     if (id) {
       fetchCalendarData();
     }
-  }, [id]);
+  }, [id, user?.id]);
 
   const fetchCalendarData = async () => {
     if (!id) return;
@@ -84,11 +87,8 @@ export default function Calendar() {
       ]);
 
       if (calendarResponse.error) {
-        if (calendarResponse.error.code === 'PGRST116') {
-          setError('Calendar not found');
-        } else {
-          setError('Error loading calendar');
-        }
+        console.error('Calendar fetch error:', calendarResponse.error);
+        setError('Calendar not found');
         return;
       }
 
@@ -240,6 +240,14 @@ export default function Calendar() {
           </div>
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            {/* Show private calendar sharing section for owners */}
+            {isOwner && !calendar.is_public && (
+              <PrivateCalendarShare 
+                calendar={calendar}
+                onInvite={() => setShowShareModal(true)}
+              />
+            )}
+
             <div className="bg-white rounded-lg shadow-xl overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-purple-100">
                 <div className="order-1 lg:order-2 p-6">
@@ -254,6 +262,7 @@ export default function Calendar() {
                     googleCalendarUrl={calendar.google_calendar_url}
                     isSubscribed={isSubscribed}
                     calendarId={calendar.id}
+                    isPublic={calendar.is_public}
                   />
                 </div>
               </div>
@@ -275,6 +284,12 @@ export default function Calendar() {
             calendarName={calendar.name}
           />
         )}
+
+        <ShareCalendarModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          calendar={calendar}
+        />
       </div>
     </>
   );

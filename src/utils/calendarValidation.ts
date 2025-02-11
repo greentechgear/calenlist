@@ -33,7 +33,7 @@ export function validateCalendarForm(data: CalendarFormData): Record<string, str
 
   // Add demo video validation if provided
   if (data.demoVideoUrl) {
-    rules['demoVideoUrl'] = [commonRules.youtubeUrl()];
+    rules['demoVideoUrl'] = [commonRules.videoUrl()];
   }
 
   return validateForm(data, rules);
