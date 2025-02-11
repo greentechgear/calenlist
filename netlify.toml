@@ -6,8 +6,8 @@
   publish = "dist"
   environment = { NODE_VERSION = "18" }
 
-[context.develop]
-  command = "npm run build:develop"
+[context.branch-deploy]
+  command = "npm run build:staging"
   publish = "dist"
   environment = { NODE_VERSION = "18" }
 
