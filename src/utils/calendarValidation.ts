@@ -12,7 +12,7 @@ interface CalendarFormData {
 export function validateCalendarForm(data: CalendarFormData): Record<string, string> {
   const rules = {
     name: [
-      commonRules.required(),
+      commonRules.required('Calendar name is required'),
       commonRules.maxLength(100, 'Calendar name must be 100 characters or less')
     ],
     description: [
@@ -23,12 +23,9 @@ export function validateCalendarForm(data: CalendarFormData): Record<string, str
     ]
   };
 
-  // Add URL validation if not skipped
-  if (!data.skipUrlValidation) {
-    rules['googleCalendarUrl'] = [
-      commonRules.required('Calendar URL is required'),
-      commonRules.calendarUrl()
-    ];
+  // Only validate URL if not skipping URL validation
+  if (!data.skipUrlValidation && data.googleCalendarUrl) {
+    rules['googleCalendarUrl'] = [commonRules.calendarUrl()];
   }
 
   // Add demo video validation if provided

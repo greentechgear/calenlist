@@ -10,15 +10,10 @@ serve(async (req) => {
   try {
     const {
       calendarId,
-      recipientEmail,
-      calendarName,
-      shareUrl
+      rating,
+      comment,
+      userDisplayName
     } = await req.json();
-
-    // Validate required fields
-    if (!calendarId || !recipientEmail || !calendarName || !shareUrl) {
-      throw new Error('Missing required fields');
-    }
 
     // Get environment variables
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -26,12 +21,30 @@ serve(async (req) => {
     const replyToEmail = Deno.env.get('REPLY_TO_EMAIL');
 
     if (!resendApiKey || !fromEmail || !replyToEmail) {
-      console.error('Missing environment variables:', {
-        hasResendKey: !!resendApiKey,
-        hasFromEmail: !!fromEmail,
-        hasReplyTo: !!replyToEmail
-      });
       throw new Error('Missing required environment variables');
+    }
+
+    // Get calendar owner's email from Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
+    const calendarResponse = await fetch(
+      `${supabaseUrl}/rest/v1/calendars?id=eq.${calendarId}&select=name,user_id,profiles(email,display_name)`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      }
+    );
+
+    const [calendar] = await calendarResponse.json();
+    if (!calendar?.profiles?.email) {
+      throw new Error('Calendar owner not found');
     }
 
     // Send email using Resend
@@ -44,55 +57,56 @@ serve(async (req) => {
       body: JSON.stringify({
         from: `Calenlist <${fromEmail}>`,
         reply_to: replyToEmail,
-        to: recipientEmail,
-        subject: `Calendar Invitation: ${calendarName}`,
+        to: calendar.profiles.email,
+        subject: `New Feedback for ${calendar.name}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #7C3AED; margin-bottom: 20px;">Calendar Invitation</h2>
+            <h2 style="color: #7C3AED; margin-bottom: 20px;">New Calendar Feedback</h2>
             
             <p style="margin-bottom: 20px;">
-              Please signup with Calenlist. You've been invited to subscribe to the calendar "${calendarName}" on Calenlist.
+              ${userDisplayName} has left feedback for ${calendar.name}.
             </p>
 
-            <div style="margin: 30px 0;">
-              <a href="${shareUrl}" 
-                 style="background-color: #7C3AED; color: white; padding: 12px 24px; 
-                        text-decoration: none; border-radius: 6px; display: inline-block;">
-                View Calendar
-              </a>
+            <div style="background-color: #F5F3FF; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #6D28D9;">
+                <strong>Rating:</strong> ${rating}/5
+              </p>
+              ${comment ? `
+                <p style="margin: 10px 0 0 0; color: #6D28D9;">
+                  <strong>Comment:</strong><br>
+                  ${comment}
+                </p>
+              ` : ''}
             </div>
 
             <p style="color: #666; font-size: 14px;">
-              If you don't have a Calenlist account yet, you'll need to sign up then subscribe.
+              You can view all feedback in your calendar settings.
             </p>
           </div>
         `,
         tags: [
-          { name: 'category', value: 'calendar_invite' }
+          { name: 'category', value: 'event_feedback' }
         ]
       }),
     });
 
     if (!res.ok) {
       const error = await res.json();
-      console.error('Resend API error:', error);
       throw new Error(error.message || 'Failed to send email');
     }
 
-    const data = await res.json();
-
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error sending invite:', error);
+    console.error('Error sending feedback notification:', error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to send invitation'
+        error: error instanceof Error ? error.message : 'Failed to send notification'
       }),
       { 
         status: 500,

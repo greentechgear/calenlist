@@ -1,29 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import AddCalendarModal from '../components/AddCalendarModal';
-import CalendarCard from '../components/CalendarCard';
 import CombinedCalendarView from '../components/dashboard/CombinedCalendarView';
 import DashboardStats from '../components/DashboardStats';
 import CalendarTemplates from '../components/home/CalendarTemplates';
 import TopCalendars from '../components/home/TopCalendars';
 import SEO from '../components/SEO';
 import { Calendar } from '../types/calendar';
-import { Plus, Mail, Share2 } from 'lucide-react';
 import { toast } from '../utils/toast';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
+import PendingInvites from '../components/dashboard/PendingInvites';
+import MyCalendars from '../components/dashboard/MyCalendars';
 import { getGoogleCalendarSubscribeUrl } from '../utils/calendarUrl';
 
 interface CalendarInvite {
   id: string;
   calendar: Calendar;
   sender: {
-    display_name: string;
+    display_name: string | null;
   };
 }
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [subscribedCalendars, setSubscribedCalendars] = useState<Calendar[]>([]);
   const [pendingInvites, setPendingInvites] = useState<CalendarInvite[]>([]);
@@ -60,35 +62,19 @@ export default function Dashboard() {
   }, [user]);
 
   const fetchPendingInvites = async () => {
-    if (!user?.email) return;
+    if (!user) return;
 
     try {
       const { data, error } = await supabase
-        .from('calendar_invites')
-        .select(`
-          id,
-          calendar:calendar_id (
-            id,
-            name,
-            description,
-            is_public,
-            banner,
-            google_calendar_url,
-            profiles!calendars_user_id_fkey (
-              display_name
-            )
-          ),
-          sender:sender_id (
-            display_name
-          )
-        `)
-        .eq('recipient_email', user.email)
-        .is('accepted_at', null);
+        .rpc('get_pending_invites', {
+          p_user_id: user.id
+        });
 
       if (error) throw error;
       setPendingInvites(data || []);
     } catch (err) {
       console.error('Error fetching pending invites:', err);
+      toast.error('Failed to load calendar invites');
     }
   };
 
@@ -127,76 +113,67 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
-      // First try to get existing profile
-      const { data: existingProfile, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('display_name')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (fetchError && !fetchError.message.includes('Results contain 0 rows')) {
-        throw fetchError;
-      }
-
-      if (existingProfile) {
-        setDisplayName(existingProfile.display_name);
-        return;
-      }
-
-      // If no profile exists, create one
-      const defaultDisplayName = user.email ? user.email.split('@')[0] : `User ${user.id.slice(0, 8)}`;
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert([
-          { 
-            id: user.id,
-            email: user.email,
-            display_name: defaultDisplayName
-          }
-        ])
-        .select('display_name')
-        .single();
-
-      if (insertError) throw insertError;
-      if (newProfile) {
-        setDisplayName(newProfile.display_name);
-      }
+      if (error) throw error;
+      setDisplayName(data?.display_name || user.email?.split('@')[0] || 'User');
     } catch (err) {
-      console.error('Error handling profile:', err);
-      // Set a fallback display name
-      setDisplayName(user.email ? user.email.split('@')[0] : 'User');
+      console.error('Error fetching profile:', err);
+      setDisplayName(user.email?.split('@')[0] || 'User');
     }
   };
 
   const loadPopularCalendars = async () => {
-    const calendars = await getTopCalendars();
-    setPopularCalendars(calendars);
+    try {
+      const { data: calendarsData, error } = await supabase
+        .from('calendars')
+        .select(`
+          *,
+          profiles!calendars_user_id_fkey (
+            display_name
+          ),
+          calendar_stats!inner (
+            subscriber_count
+          )
+        `)
+        .eq('is_public', true)
+        .order('calendar_stats(subscriber_count)', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      setPopularCalendars(calendarsData || []);
+    } catch (error) {
+      console.error('Error loading popular calendars:', error);
+    }
   };
 
   const fetchCalendars = async () => {
     if (!user) return;
 
-    const { data: calendarsData, error } = await supabase
-      .from('calendars')
-      .select(`
-        *, 
-        profiles!calendars_user_id_fkey(display_name), 
-        subscriptions(count)
-      `)
-      .eq('user_id', user.id);
+    try {
+      const { data: calendarsData, error } = await supabase
+        .from('calendars')
+        .select(`
+          *, 
+          profiles!calendars_user_id_fkey(display_name), 
+          calendar_stats!inner(subscriber_count)
+        `)
+        .eq('user_id', user.id);
 
-    if (error) {
-      console.error('Error fetching calendars:', error);
-      return;
+      if (error) throw error;
+
+      setCalendars(calendarsData || []);
+      setTotalSubscribers(
+        calendarsData?.reduce((acc, cal) => acc + (cal.calendar_stats?.[0]?.subscriber_count || 0), 0) || 0
+      );
+    } catch (err) {
+      console.error('Error fetching calendars:', err);
+      toast.error('Failed to load your calendars');
     }
-
-    const formattedCalendars = calendarsData.map(calendar => ({
-      ...calendar,
-      subscriber_count: calendar.subscriptions?.[0]?.count || 0
-    }));
-
-    setCalendars(formattedCalendars);
-    setTotalSubscribers(formattedCalendars.reduce((acc, cal) => acc + (cal.subscriber_count || 0), 0));
   };
 
   const fetchSubscribedCalendars = async () => {
@@ -206,7 +183,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from('subscriptions')
         .select(`
-          calendar:calendar_id (
+          calendar:calendars!inner (
             *,
             profiles!calendars_user_id_fkey (
               display_name
@@ -215,14 +192,11 @@ export default function Dashboard() {
         `)
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching subscribed calendars:', error);
-        return;
-      }
-
-      setSubscribedCalendars(data?.map(sub => sub.calendar) || []);
+      if (error) throw error;
+      setSubscribedCalendars(data?.map(sub => sub.calendar).filter(Boolean) || []);
     } catch (error) {
-      console.error('Error fetching calendars:', error);
+      console.error('Error fetching subscribed calendars:', error);
+      toast.error('Failed to load your subscriptions');
     }
   };
 
@@ -249,58 +223,17 @@ export default function Dashboard() {
         description="Manage your shared calendars and view subscriber statistics."
       />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Welcome Message */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Welcome back, {displayName}
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Stay updated with your subscribed calendars and manage your own calendar events all in one place.
-              </p>
-            </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transform transition-all hover:-translate-y-0.5"
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Add New Calendar
-            </button>
-          </div>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <DashboardHeader 
+          displayName={displayName}
+          onAddCalendar={() => setIsModalOpen(true)}
+        />
 
-        {/* Pending Invites */}
-        {pendingInvites.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Mail className="h-5 w-5 text-purple-600 mr-2" />
-              Calendar Invites
-            </h2>
-            <div className="space-y-4">
-              {pendingInvites.map(invite => (
-                <div 
-                  key={invite.id}
-                  className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-100"
-                >
-                  <div>
-                    <h3 className="font-medium text-gray-900">{invite.calendar.name}</h3>
-                    <p className="text-sm text-gray-600">
-                      Shared by {invite.sender.display_name}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleAcceptInvite(invite.id, invite.calendar)}
-                    className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
-                  >
-                    Accept Invite & Subscribe
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <PendingInvites 
+          invites={pendingInvites}
+          onAcceptInvite={handleAcceptInvite}
+          onViewCalendar={(calendarId) => navigate(`/calendar/${calendarId}`)}
+        />
 
         {/* Subscribed Calendars */}
         {subscribedCalendars.length > 0 && (
@@ -319,18 +252,10 @@ export default function Dashboard() {
         )}
 
         {/* My Calendars */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">My Calendars</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {calendars.map((calendar) => (
-              <CalendarCard
-                key={calendar.id}
-                calendar={calendar}
-                onUpdate={fetchCalendars}
-              />
-            ))}
-          </div>
-        </div>
+        <MyCalendars 
+          calendars={calendars}
+          onUpdate={fetchCalendars}
+        />
 
         {/* Calendar Templates */}
         <div>

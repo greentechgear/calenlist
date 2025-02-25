@@ -22,16 +22,14 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
 
     setSending(true);
     try {
-      // Store the invite in the database
-      const { error: inviteError } = await supabase
-        .from('calendar_invites')
-        .insert({
-          calendar_id: calendar.id,
-          sender_id: calendar.user_id,
-          recipient_email: email.toLowerCase().trim()
+      // Use the create_calendar_invite function
+      const { data, error } = await supabase
+        .rpc('create_calendar_invite', {
+          p_calendar_id: calendar.id,
+          p_recipient_email: email.toLowerCase().trim()
         });
 
-      if (inviteError) throw inviteError;
+      if (error) throw error;
 
       // Send the email notification
       const { error: emailError } = await supabase.functions.invoke('send-calendar-invite', {
@@ -56,11 +54,54 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
     }
   };
 
+  const calendarUrl = `${window.location.origin}/calendar/${calendar.id}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(calendarUrl);
+      toast.success('Link copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Subscribe to ${calendar.name}`,
+          text: `Check out my calendar "${calendar.name}" on Calenlist!`,
+          url: calendarUrl
+        });
+      } catch (err) {
+        if (err instanceof Error && err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    } else {
+      handleCopy();
+    }
+  };
+
+  const handleEmailInvite = () => {
+    const subject = encodeURIComponent(`Subscribe to my calendar: ${calendar.name}`);
+    const body = encodeURIComponent(
+      `Hi!\n\n` +
+      `I just created a new calendar on Calenlist and would love for you to subscribe.\n\n` +
+      `You can view and subscribe to my events here:\n` +
+      `${calendarUrl}\n\n` +
+      `Best regards`
+    );
+
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-md w-full">
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Send Email Invitation</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Share Your Calendar</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -70,9 +111,17 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
         </div>
 
         <div className="p-6">
-          <p className="text-sm text-gray-600 mb-6">
-            The recipient will receive an email with a link to subscribe to your calendar.
-          </p>
+          <div className="text-center mb-8">
+            <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="h-8 w-8 text-purple-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Share Your Calendar
+            </h3>
+            <p className="text-gray-600">
+              Invite others to subscribe to your calendar
+            </p>
+          </div>
 
           <form onSubmit={handleSendInvite} className="space-y-4">
             <div>
@@ -99,6 +148,23 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
               {sending ? 'Sending...' : 'Send Invitation'}
             </button>
           </form>
+
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-500 mb-4">
+              Or share your calendar link directly:
+            </p>
+            <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+              <span className="text-sm text-gray-600 truncate mr-2">
+                {calendarUrl}
+              </span>
+              <button
+                onClick={handleShare}
+                className="text-purple-600 hover:text-purple-700 font-medium text-sm"
+              >
+                Share
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
