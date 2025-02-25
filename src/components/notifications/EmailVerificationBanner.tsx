@@ -46,33 +46,33 @@ export default function EmailVerificationBanner() {
 
   return (
     <div className="fixed inset-x-0 top-16 z-50">
-      <div className={`${error ? 'bg-red-50' : 'bg-yellow-50'} p-4 shadow-md`}>
+      <div className={`${error ? 'bg-red-50' : 'bg-yellow-50'} p-2 sm:p-4 shadow-md`}>
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Icon and Message */}
-            <div className="flex items-start sm:items-center flex-1 min-w-0">
-              <span className={`flex-shrink-0 p-2 rounded-lg ${error ? 'bg-red-100' : 'bg-yellow-100'} mr-3`}>
+            <div className="flex items-center flex-1 min-w-0 space-x-2">
+              <span className={`flex-shrink-0 ${error ? 'text-red-600' : 'text-yellow-600'}`}>
                 {error ? (
-                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <AlertCircle className="h-5 w-5" />
                 ) : (
-                  <Mail className="h-5 w-5 text-yellow-600" />
+                  <Mail className="h-5 w-5" />
                 )}
               </span>
-              <p className={`text-sm font-medium ${error ? 'text-red-600' : 'text-yellow-600'} truncate`}>
+              <p className={`text-sm font-medium truncate ${error ? 'text-red-600' : 'text-yellow-600'}`}>
                 {error ? error : (
                   sent 
-                    ? `Verification email sent to ${user.email}! Please check your inbox and spam folder`
-                    : `Please verify your email address (${user.email}) to access all features`
+                    ? 'Verification email sent!'
+                    : 'Please verify your email'
                 )}
               </p>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 ml-10 sm:ml-0">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleResend}
                 disabled={sending || sent}
-                className={`flex-shrink-0 px-3 py-1.5 text-sm font-medium rounded-md ${
+                className={`flex-shrink-0 px-3 py-1 text-sm font-medium rounded-md ${
                   error
                     ? 'text-red-600 bg-red-100 hover:bg-red-200'
                     : sent
@@ -80,7 +80,7 @@ export default function EmailVerificationBanner() {
                       : 'text-yellow-600 bg-yellow-100 hover:bg-yellow-200'
                 } disabled:opacity-50 transition-colors`}
               >
-                {sending ? 'Sending...' : error ? 'Try again' : sent ? 'Email sent!' : 'Resend email'}
+                {sending ? 'Sending...' : error ? 'Try again' : sent ? 'Sent!' : 'Resend'}
               </button>
               <button
                 onClick={() => setDismissed(true)}

@@ -42,50 +42,69 @@ export async function updateCalendar({
   if (error) throw error;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 export async function getTopCalendars(limit = 6): Promise<Calendar[]> {
-  try {
-    // First get the calendar stats
-    const statsData = await supabaseQuery(() => 
-      supabase
+  let retries = 0;
+  
+  while (retries < MAX_RETRIES) {
+    try {
+      // First get the calendar stats
+      const { data: statsData, error: statsError } = await supabase
         .from('calendar_stats')
         .select('calendar_id, subscriber_count')
         .order('subscriber_count', { ascending: false })
-        .limit(limit)
-    );
+        .limit(limit);
 
-    if (!statsData?.length) {
-      return [];
-    }
+      if (statsError) throw statsError;
+      if (!statsData?.length) {
+        return [];
+      }
 
-    // Get the calendar IDs from the stats
-    const calendarIds = statsData.map(stat => stat.calendar_id);
+      // Get the calendar IDs from the stats
+      const calendarIds = statsData.map(stat => stat.calendar_id);
 
-    // Then fetch the calendars with those IDs
-    const calendarsData = await supabaseQuery(() =>
-      supabase
+      // Then fetch the calendars with those IDs
+      const { data: calendarsData, error: calendarsError } = await supabase
         .from('calendars')
         .select(`
           *,
           profiles!calendars_user_id_fkey (
             display_name
+          ),
+          calendar_stats!inner (
+            subscriber_count
           )
         `)
         .eq('is_public', true)
-        .in('id', calendarIds)
-    );
+        .in('id', calendarIds);
 
-    // Merge the stats with the calendar data
-    return calendarsData
-      .map(calendar => {
-        const stats = statsData.find(stat => stat.calendar_id === calendar.id);
-        return {
-          ...calendar,
-          subscriber_count: stats?.subscriber_count || 0
-        };
-      })
-      .sort((a, b) => (b.subscriber_count || 0) - (a.subscriber_count || 0));
-  } catch (error) {
-    console.error('Error fetching top calendars:', error);
-    return [];
+      if (calendarsError) throw calendarsError;
+
+      // Merge the stats with the calendar data
+      return calendarsData
+        .map(calendar => {
+          const stats = statsData.find(stat => stat.calendar_id === calendar.id);
+          return {
+            ...calendar,
+            subscriber_count: stats?.subscriber_count || 0
+          };
+        })
+        .sort((a, b) => (b.subscriber_count || 0) - (a.subscriber_count || 0));
+    } catch (error) {
+      retries++;
+      console.warn(`Attempt ${retries} failed:`, error);
+      
+      if (retries === MAX_RETRIES) {
+        console.error('Error fetching top calendars:', error);
+        return []; // Return empty array after all retries fail
+      }
+
+      // Wait before retrying with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, retries - 1)));
+    }
   }
+
+  return []; // Fallback return
 }

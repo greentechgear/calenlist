@@ -1,26 +1,26 @@
 import React from 'react';
-import { Mail, Users, BarChart3, Calendar, MessageSquare, BarChart as ChartBar } from 'lucide-react';
+import { Calendar, MapPin, BarChart3, Github } from 'lucide-react';
 
 const features = [
   {
-    icon: Mail,
+    icon: Calendar,
     title: "Meet in Calendars, Not Feeds",
     description: "Tired of fighting algorithms? Your events show up in people's calendars, not buried under cat videos and vacation photos."
   },
   {
-    icon: BarChart3,
-    title: "Detailed Analytics",
-    description: "Track subscriber growth and get insights into your audience. Monitor subscriber counts and engagement over time."
-  },
-  {
-    icon: MessageSquare,
-    title: "Event Feedback",
-    description: "Collect valuable feedback from attendees after each event. Get ratings and comments to improve future events."
-  },
-  {
-    icon: Calendar,
+    icon: Github,
     title: "Free & Open Source",
-    description: "Calenlist is completely free and open source. Host your own instance or use our hosted version."
+    description: "Calenlist is free and open source. Host your own instance or use our hosted version and host paid events that members can subscribe to."
+  },
+  {
+    icon: MapPin,
+    title: "Location Control",
+    description: "Share event locations selectively - public, subscribers-only, or private. Perfect for managing both public venues and members-only meeting spots."
+  },
+  {
+    icon: BarChart3,
+    title: "Smart Event Organization",
+    description: "Organize events your way with customizable visibility settings, location sharing, and streaming links. Perfect for hybrid events that combine in-person and online attendance."
   }
 ];
 
@@ -33,7 +33,7 @@ export default function MarketingSection() {
             Why Choose Calenlist?
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Because real connections happen in calendars, not feeds. Launch events that people actually see, track engagement, and build your community.
+            Because real connections happen in calendars, not feeds. Launch events that people actually see, build your community, and keep 100% control of your audience.
           </p>
         </div>
 
@@ -59,28 +59,38 @@ export default function MarketingSection() {
           ))}
         </div>
 
-        {/* Analytics Showcase */}
-        <div className="mt-16 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-8">
-          <div className="flex items-center justify-center mb-6">
-            <ChartBar className="h-8 w-8 text-purple-600 mr-3" />
-            <h3 className="text-2xl font-bold text-gray-900">
-              Powerful Analytics & Feedback
-            </h3>
+        {/* Pricing Details */}
+        <div className="mt-16 text-center">
+          <div className="inline-flex items-center justify-center px-6 py-3 bg-purple-50 rounded-full">
+            <span className="text-purple-700 font-medium">Free to use, optional paid features</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto text-center">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h4 className="font-semibold text-gray-900">Subscriber Stats</h4>
-              <p className="text-gray-600 text-sm mt-2">Track your audience growth and engagement over time</p>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-center">
+            <div className="p-4">
+              <h4 className="font-semibold text-gray-900">Free Plan</h4>
+              <p className="text-gray-600 text-sm mt-2">Create and share unlimited calendars with your audience</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h4 className="font-semibold text-gray-900">Event Feedback</h4>
-              <p className="text-gray-600 text-sm mt-2">Collect ratings and comments from event attendees</p>
+            <div className="p-4">
+              <h4 className="font-semibold text-gray-900">Paid Events</h4>
+              <p className="text-gray-600 text-sm mt-2">Charge per event, you keep 90% of ticket sales</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h4 className="font-semibold text-gray-900">Engagement Reports</h4>
-              <p className="text-gray-600 text-sm mt-2">See which events resonate most with your audience</p>
+            <div className="p-4">
+              <h4 className="font-semibold text-gray-900">Premium Access</h4>
+              <p className="text-gray-600 text-sm mt-2">Offer monthly subscriptions to your calendar</p>
             </div>
           </div>
+        </div>
+
+        {/* Anti-Social Media Callout */}
+        <div className="mt-16 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-8 text-center">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            Meet People in Their Calendars, Not Their Feeds
+          </h3>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Remember when event planning wasn't about gaming an algorithm? 
+            When RSVPs meant more than "Interested"? 
+            Calenlist puts your events directly into people's calendars - 
+            where they actually plan their lives, not where they mindlessly scroll.
+          </p>
         </div>
       </div>
     </div>

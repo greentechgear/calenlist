@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar as CalendarIcon, LogOut, Settings, LogIn } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import FeedbackButton from '../FeedbackButton';
 
 export default function Navigation() {
   const { user, signOut } = useAuth();
@@ -27,6 +28,7 @@ export default function Navigation() {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
+                <FeedbackButton />
                 <Link
                   to="/profile/settings"
                   className="text-gray-600 hover:text-gray-900"
