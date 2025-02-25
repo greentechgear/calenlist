@@ -21,51 +21,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Handle hash fragment for email confirmation
+  // Handle hash fragment for OAuth and email confirmation
   useEffect(() => {
-    const handleEmailConfirmation = async () => {
+    const handleAuthCallback = async () => {
       const hash = window.location.hash;
-      if (hash && (hash.includes('type=signup') || hash.includes('type=recovery'))) {
-        try {
-          // Parse access token from hash
-          const params = new URLSearchParams(hash.substring(1));
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
-          const type = params.get('type');
-          
-          if (accessToken && refreshToken) {
-            // Set the session
-            const { data: { session }, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
+      if (!hash) return;
 
-            if (error) throw error;
-            if (session?.user) {
-              setUser(session.user);
+      try {
+        // Parse hash parameters
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const providerToken = params.get('provider_token');
+        const type = params.get('type');
+
+        if (accessToken && refreshToken) {
+          // Set the session
+          const { data: { session }, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+
+          if (error) throw error;
+          if (session?.user) {
+            setUser(session.user);
+
+            // Store provider token for Google Calendar access
+            if (providerToken) {
+              localStorage.setItem('google_token', providerToken);
+            }
+
+            // Handle different callback types
+            if (type === 'recovery') {
+              navigate('/reset-password', { replace: true });
+            } else {
+              // Stay on current page but clear hash
+              window.history.replaceState(
+                null, 
+                '', 
+                window.location.pathname + window.location.search
+              );
               
-              // Handle different confirmation types
-              if (type === 'recovery') {
-                // Password reset flow
-                window.history.replaceState(null, '', '/reset-password');
-                navigate('/reset-password', { replace: true });
-              } else {
-                // Normal email confirmation flow
-                window.history.replaceState(null, '', '/dashboard');
-                navigate('/dashboard', { replace: true });
-                toast.success('Email confirmed successfully!');
+              if (providerToken) {
+                toast.success('Successfully connected with Google Calendar!');
               }
             }
           }
-        } catch (error) {
-          console.error('Error handling email confirmation:', error);
-          toast.error('Failed to confirm email. Please try again or contact support.');
-          navigate('/login');
         }
+      } catch (error) {
+        console.error('Error handling auth callback:', error);
+        toast.error('Failed to complete authentication. Please try again.');
       }
     };
 
-    handleEmailConfirmation();
+    handleAuthCallback();
   }, [navigate]);
 
   useEffect(() => {
@@ -233,11 +242,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await supabase.auth.signOut();
       setUser(null);
+      localStorage.removeItem('google_token'); // Clear Google token
       
       // Only redirect to home if we're on a protected route
       const protectedRoutes = ['/dashboard'];
       if (protectedRoutes.some(route => location.pathname.startsWith(route))) {
-        navigate('/');
+        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Error signing out:', error);

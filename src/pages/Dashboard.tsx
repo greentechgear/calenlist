@@ -38,14 +38,24 @@ export default function Dashboard() {
   const [templateData, setTemplateData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for template parameter on mount
+  // Check for template parameter and Google Calendar state
   useEffect(() => {
     const templateId = searchParams.get('template');
     if (templateId && location.state?.template) {
       setTemplateData(location.state.template);
       setIsModalOpen(true);
     }
-  }, [searchParams, location.state]);
+
+    // Check if we should open calendar modal after Google auth
+    if (location.state?.openCalendarModal) {
+      setIsModalOpen(true);
+      // Clear the state
+      navigate(location.pathname, { 
+        replace: true,
+        state: {} 
+      });
+    }
+  }, [searchParams, location.state, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -223,7 +233,7 @@ export default function Dashboard() {
         description="Manage your shared calendars and view subscriber statistics."
       />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <DashboardHeader 
           displayName={displayName}
           onAddCalendar={() => setIsModalOpen(true)}

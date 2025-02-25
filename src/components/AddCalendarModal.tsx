@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, HelpCircle, Globe, Lock, MapPin } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { X, Calendar, Loader, AlertCircle, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { bannerPresets } from '../lib/banner/presets';
-import { maskCalendarUrl, getCalendarUrlError } from '../utils/calendarUrl';
+import { maskCalendarUrl } from '../utils/calendarUrl';
 import CategorySelector from './settings/CategorySelector';
 import GoogleCalendarHelp from './home/GoogleCalendarHelp';
 import InviteFriendsModal from './modals/InviteFriendsModal';
 import CalendarCreationSteps from './calendar/CalendarCreationSteps';
+import GoogleCalendarSelector from './calendar/GoogleCalendarSelector';
 import { validateCalendarForm } from '../utils/calendarValidation';
 import { toast } from '../utils/toast';
-
-type AddressVisibility = 'public' | 'subscribers' | 'private';
 
 interface AddCalendarModalProps {
   isOpen: boolean;
@@ -24,8 +24,14 @@ interface AddCalendarModalProps {
   } | null;
 }
 
+type CalendarSource = 'new' | 'existing';
+
+const GOOGLE_CLIENT_ID = '302687386632-bld8ojodac1nj3t8qor27vvcl3j0hpqd.apps.googleusercontent.com';
+const REDIRECT_URI = `${window.location.origin}/google-callback`;
+
 export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: AddCalendarModalProps) {
   const { user } = useAuth();
+  const location = useLocation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [googleCalendarUrl, setGoogleCalendarUrl] = useState('');
@@ -36,11 +42,9 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [createdCalendar, setCreatedCalendar] = useState<any>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [skipUrlInput, setSkipUrlInput] = useState(false);
-  const [physicalAddress, setPhysicalAddress] = useState('');
-  const [addressVisibility, setAddressVisibility] = useState<AddressVisibility>('subscribers');
   const [loading, setLoading] = useState(false);
-  const [demoVideoUrl, setDemoVideoUrl] = useState('');
+  const [calendarSource, setCalendarSource] = useState<CalendarSource>('new');
+  const [selectedGoogleCalendar, setSelectedGoogleCalendar] = useState<{ id: string; summary: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,40 +61,58 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
       setIsPublic(true);
       setError('');
       setValidationErrors({});
-      setSkipUrlInput(false);
-      setPhysicalAddress('');
-      setAddressVisibility('subscribers');
+      setCalendarSource('new');
+      setSelectedGoogleCalendar(null);
     }
   }, [isOpen, template]);
+
+  const handleGoogleAuth = async () => {
+    try {
+      // Store return path
+      sessionStorage.setItem('calendar_return_to', location.pathname);
+
+      // Build Google OAuth URL
+      const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      authUrl.searchParams.append('client_id', GOOGLE_CLIENT_ID);
+      authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
+      authUrl.searchParams.append('response_type', 'token');
+      authUrl.searchParams.append('scope', 'https://www.googleapis.com/auth/calendar');
+      authUrl.searchParams.append('prompt', 'consent');
+
+      // Redirect to Google auth
+      window.location.href = authUrl.toString();
+    } catch (err) {
+      console.error('Google auth error:', err);
+      toast.error('Failed to connect to Google Calendar');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    // Check for invalid calendar URL format first
-    if (googleCalendarUrl && !skipUrlInput) {
-      const urlError = getCalendarUrlError(googleCalendarUrl);
-      if (urlError) {
-        setValidationErrors({
-          ...validationErrors,
-          googleCalendarUrl: urlError
-        });
-        return;
-      }
+    if (calendarSource === 'new') {
+      handleGoogleAuth();
+      return;
+    }
+
+    // For existing calendar selection
+    if (!selectedGoogleCalendar) {
+      setError('Please select a calendar');
+      return;
     }
 
     const errors = validateCalendarForm({
-      name,
+      name: selectedGoogleCalendar.summary,
       description,
-      googleCalendarUrl,
+      googleCalendarUrl: '',
       categoryId,
-      demoVideoUrl,
-      skipUrlValidation: skipUrlInput
+      demoVideoUrl: '',
+      skipUrlValidation: true
     });
 
     setValidationErrors(errors);
     if (Object.keys(errors).length > 0) {
-      // Scroll to first error if needed
       const firstErrorElement = document.querySelector('[aria-invalid="true"]');
       if (firstErrorElement) {
         firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -102,19 +124,35 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
     setError('');
 
     try {
+      // Get calendar URL from Google Calendar API
+      const providerToken = localStorage.getItem('google_token');
+      if (!providerToken) {
+        throw new Error('Google Calendar not connected');
+      }
+
+      const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${selectedGoogleCalendar.id}/events?timeMin=${new Date().toISOString()}`, {
+        headers: {
+          'Authorization': `Bearer ${providerToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to access Google Calendar');
+      }
+
+      // Create calendar in database
       const { data: calendar, error: calendarError } = await supabase
         .from('calendars')
         .insert([
           {
             user_id: user.id,
-            name: name.trim(),
+            name: selectedGoogleCalendar.summary,
             description: description.trim() || null,
-            google_calendar_url: googleCalendarUrl.trim() || null,
+            google_calendar_url: `https://calendar.google.com/calendar/ical/${selectedGoogleCalendar.id}/public/basic.ics`,
             is_public: isPublic,
             category_id: categoryId,
-            banner: bannerPresets[0],
-            physical_address: physicalAddress.trim() || null,
-            address_visibility: addressVisibility,
+            banner: bannerPresets[0]
           },
         ])
         .select()
@@ -143,9 +181,8 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
     setIsPublic(true);
     setError('');
     setValidationErrors({});
-    setSkipUrlInput(false);
-    setPhysicalAddress('');
-    setAddressVisibility('subscribers');
+    setCalendarSource('new');
+    setSelectedGoogleCalendar(null);
   };
 
   const handleClose = () => {
@@ -176,213 +213,127 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
             </div>
           )}
 
-          {!skipUrlInput && (
-            <div className="mb-8">
-              <CalendarCreationSteps />
+          <div className="mb-6">
+            <div className="flex space-x-4 mb-6">
+              <button
+                type="button"
+                onClick={() => setCalendarSource('new')}
+                className={`flex-1 flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
+                  calendarSource === 'new'
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Calendar
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarSource('existing')}
+                className={`flex-1 flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
+                  calendarSource === 'existing'
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Use Existing Calendar
+              </button>
             </div>
-          )}
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Calendar URL field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Google Calendar URL{!skipUrlInput && '*'}
-              </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
-                  <CalendarIcon className="h-4 w-4" />
-                </span>
-                <input
-                  type="url"
-                  value={googleCalendarUrl}
-                  onChange={(e) => setGoogleCalendarUrl(e.target.value)}
-                  className="flex-1 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="https://calendar.google.com/calendar/ical/..."
-                  aria-invalid={!!validationErrors.googleCalendarUrl}
+            {calendarSource === 'existing' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Google Calendar
+                </label>
+                <GoogleCalendarSelector
+                  onSelect={calendar => {
+                    setSelectedGoogleCalendar(calendar);
+                    setName(calendar.summary);
+                  }}
+                  selectedId={selectedGoogleCalendar?.id}
                 />
               </div>
-              {googleCalendarUrl && (
-                <p className="mt-1 text-sm text-gray-500">
-                  Secured URL: {maskCalendarUrl(googleCalendarUrl)}
+            ) : (
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  Connect your Google Calendar to get started
                 </p>
-              )}
-              {validationErrors.googleCalendarUrl && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.googleCalendarUrl}</p>
-              )}
-              <div className="flex items-center justify-between mt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowHelp(true)}
-                  className="text-sm text-purple-600 hover:text-purple-700 inline-flex items-center"
-                >
-                  <HelpCircle className="h-4 w-4 mr-1" />
-                  How to find the URL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSkipUrlInput(true)}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Skip for now
-                </button>
               </div>
-            </div>
+            )}
 
-            {/* Name field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Calendar Name*
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
-                placeholder="My Calendar"
-                aria-invalid={!!validationErrors.name}
-              />
-              {validationErrors.name && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.name}</p>
-              )}
-            </div>
-
-            {/* Description field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description <span className="text-gray-500">(optional)</span>
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                maxLength={200}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
-                placeholder="Brief description of your calendar"
-                aria-invalid={!!validationErrors.description}
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                {description.length}/200 characters
-              </p>
-              {validationErrors.description && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.description}</p>
-              )}
-            </div>
-
-            {/* Physical Address field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Physical Address <span className="text-gray-500">(optional)</span>
-              </label>
-              <div className="mt-1 flex rounded-md shadow-sm">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
-                  <MapPin className="h-4 w-4" />
-                </span>
-                <input
-                  type="text"
-                  value={physicalAddress}
-                  onChange={(e) => setPhysicalAddress(e.target.value)}
-                  className="flex-1 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="123 Main St, City, State 12345"
-                />
-              </div>
-              {physicalAddress && (
-                <div className="mt-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address Visibility
+            {calendarSource === 'existing' && (
+              <>
+                {/* Description field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description <span className="text-gray-500">(optional)</span>
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setAddressVisibility('public')}
-                      className={`px-3 py-2 text-sm border rounded-md ${
-                        addressVisibility === 'public'
-                          ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                      }`}
-                    >
-                      Public
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAddressVisibility('subscribers')}
-                      className={`px-3 py-2 text-sm border rounded-md ${
-                        addressVisibility === 'subscribers'
-                          ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                      }`}
-                    >
-                      Subscribers
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAddressVisibility('private')}
-                      className={`px-3 py-2 text-sm border rounded-md ${
-                        addressVisibility === 'private'
-                          ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                      }`}
-                    >
-                      Private
-                    </button>
-                  </div>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    maxLength={200}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                    placeholder="Brief description of your calendar"
+                  />
                   <p className="mt-1 text-sm text-gray-500">
-                    {addressVisibility === 'public' && 'Address will be visible to everyone'}
-                    {addressVisibility === 'subscribers' && 'Only subscribers can see the address'}
-                    {addressVisibility === 'private' && 'Only you can see the address'}
+                    {description.length}/200 characters
                   </p>
                 </div>
-              )}
-            </div>
 
-            {/* Category field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category*
-              </label>
-              <CategorySelector
-                selectedId={categoryId}
-                onChange={setCategoryId}
-                error={validationErrors.categoryId}
-              />
-            </div>
+                {/* Category field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category*
+                  </label>
+                  <CategorySelector
+                    selectedId={categoryId}
+                    onChange={setCategoryId}
+                  />
+                </div>
 
-            {/* Visibility field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Calendar Visibility
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsPublic(true)}
-                  className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
-                    isPublic
-                      ? 'border-purple-500 bg-purple-50 text-purple-700'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  <Globe className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Public</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPublic(false)}
-                  className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
-                    !isPublic
-                      ? 'border-purple-500 bg-purple-50 text-purple-700'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  <Lock className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Private</span>
-                </button>
-              </div>
-              <p className="mt-2 text-sm text-gray-500">
-                {isPublic
-                  ? 'Anyone can find and subscribe to this calendar'
-                  : 'Only people you share the link with can subscribe'}
-              </p>
-            </div>
+                {/* Visibility field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Calendar Visibility
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsPublic(true)}
+                      className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
+                        isPublic
+                          ? 'border-purple-500 bg-purple-50 text-purple-700'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      <Globe className="h-4 w-4 mr-2" />
+                      <span className="font-medium">Public</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsPublic(false)}
+                      className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
+                        !isPublic
+                          ? 'border-purple-500 bg-purple-50 text-purple-700'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      <span className="font-medium">Private</span>
+                    </button>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">
+                    {isPublic
+                      ? 'Anyone can find and subscribe to this calendar'
+                      : 'Only people you share the link with can subscribe'}
+                  </p>
+                </div>
+              </>
+            )}
 
             {/* Submit button */}
             <div className="flex justify-end">
@@ -391,7 +342,7 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
                 disabled={loading}
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
               >
-                {loading ? 'Creating...' : 'Add Calendar'}
+                {loading ? 'Creating...' : calendarSource === 'new' ? 'Connect Google Calendar' : 'Add Calendar'}
               </button>
             </div>
           </form>
