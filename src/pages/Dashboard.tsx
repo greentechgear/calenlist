@@ -50,9 +50,9 @@ export default function Dashboard() {
     if (location.state?.openCalendarModal) {
       setIsModalOpen(true);
       // Clear the state
-      navigate(location.pathname, { 
+      navigate(location.pathname, {
         replace: true,
-        state: {} 
+        state: {}
       });
     }
   }, [searchParams, location.state, navigate]);
@@ -84,13 +84,12 @@ export default function Dashboard() {
       setPendingInvites(data || []);
     } catch (err) {
       console.error('Error fetching pending invites:', err);
-      toast.error('Failed to load calendar invites');
     }
   };
 
   const handleAcceptInvite = async (inviteId: string, calendar: Calendar) => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .rpc('accept_calendar_invite', {
@@ -103,7 +102,7 @@ export default function Dashboard() {
       if (data) {
         // Open Google Calendar subscription window
         window.open(getGoogleCalendarSubscribeUrl(calendar.google_calendar_url), '_blank');
-        
+
         // Refresh data
         await Promise.all([
           fetchPendingInvites(),
@@ -228,18 +227,18 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SEO 
-        title="Your Calendars" 
+      <SEO
+        title="Your Calendars"
         description="Manage your shared calendars and view subscriber statistics."
       />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <DashboardHeader 
+        <DashboardHeader
           displayName={displayName}
           onAddCalendar={() => setIsModalOpen(true)}
         />
 
-        <PendingInvites 
+        <PendingInvites
           invites={pendingInvites}
           onAcceptInvite={handleAcceptInvite}
           onViewCalendar={(calendarId) => navigate(`/calendar/${calendarId}`)}
@@ -249,7 +248,7 @@ export default function Dashboard() {
         {subscribedCalendars.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Subscriptions</h2>
-            <CombinedCalendarView 
+            <CombinedCalendarView
               calendars={subscribedCalendars}
               onUnsubscribe={fetchSubscribedCalendars}
             />
@@ -262,7 +261,7 @@ export default function Dashboard() {
         )}
 
         {/* My Calendars */}
-        <MyCalendars 
+        <MyCalendars
           calendars={calendars}
           onUpdate={fetchCalendars}
         />

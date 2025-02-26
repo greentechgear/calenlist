@@ -15,7 +15,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Examples from './pages/Examples';
 import ResetPassword from './pages/ResetPassword';
-import GoogleCallback from './components/GoogleCallback';
+
 
 export default function App() {
   return (
@@ -31,7 +31,6 @@ export default function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/examples" element={<Examples />} />
               <Route path="/calendar/:id/share" element={<CalendarShare />} />
-              <Route path="/google-callback" element={<GoogleCallback />} />
               <Route
                 path="/dashboard"
                 element={

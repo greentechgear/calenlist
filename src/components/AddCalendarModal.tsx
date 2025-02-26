@@ -24,7 +24,7 @@ interface AddCalendarModalProps {
 }
 
 const GOOGLE_CLIENT_ID = '302687386632-bld8ojodac1nj3t8qor27vvcl3j0hpqd.apps.googleusercontent.com';
-const REDIRECT_URI = `${window.location.origin}/google-callback`;
+const REDIRECT_URI = `${window.location.origin}/google-callback.html`;
 
 
 export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: AddCalendarModalProps) {

@@ -1,0 +1,24 @@
+<script>
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get('access_token');
+
+
+    try {
+        if (accessToken) {
+
+            console.log('Google Calendar Access Token:', accessToken);
+
+            localStorage.setItem('google_token', accessToken);
+
+            const returnTo = sessionStorage.getItem('calendar_return_to') || '/dashboard';
+            sessionStorage.removeItem('calendar_return_to');
+
+            window.location.replace(returnTo);
+
+        }
+    } catch (error) {
+        console.error('Error handling callback:', error);
+        window.location.replace('/dashboard');
+    }
+</script>
