@@ -1,6 +1,6 @@
-import React from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, isBefore, isAfter } from 'date-fns';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, isBefore, isAfter } from 'date-fns';
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar';
 import EventChiclet from '../calendar/EventChiclet';
 import { Calendar as CalendarType } from '../../types/calendar';
@@ -32,14 +32,24 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
   const start = startOfMonth(today);
   const end = endOfMonth(today);
   const days = eachDayOfInterval({ start, end });
-
-  // Create an array to store calendar data with events
-  const calendarData: CalendarData[] = [];
+  const [removedCalendarIds, setRemovedCalendarIds] = useState<Set<string>>(new Set());
+  const [animatingCalendarId, setAnimatingCalendarId] = useState<string | null>(null);
+  const isMounted = useRef(true);
   
-  // Process each calendar separately
-  calendars.forEach(calendar => {
+  // When component unmounts, set isMounted to false to prevent state updates
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Create a filtered calendar list that excludes removed calendars
+  const visibleCalendars = calendars.filter(calendar => !removedCalendarIds.has(calendar.id));
+  
+  // Build calendar data for visible calendars
+  const calendarData = visibleCalendars.map(calendar => {
     const { events = [], loading = false, error = null } = useGoogleCalendar(calendar.google_calendar_url);
-    calendarData.push({
+    return {
       calendarId: calendar.id,
       calendarName: calendar.name,
       creatorName: calendar.profiles?.display_name,
@@ -47,31 +57,54 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
       events,
       loading,
       error
-    });
+    };
   });
 
   const isLoading = calendarData.some(cal => cal.loading);
   const hasErrors = calendarData.some(cal => cal.error);
 
   const handleUnsubscribe = async (calendarId: string) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('subscriptions')
-        .delete()
-        .eq('calendar_id', calendarId)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      // Call the onUnsubscribe callback to update parent state
-      onUnsubscribe(calendarId);
-      toast.success('Successfully unsubscribed from calendar');
-    } catch (err) {
-      console.error('Error unsubscribing:', err);
-      toast.error('Failed to unsubscribe from calendar');
-    }
+    if (!user || animatingCalendarId) return;
+    
+    // Start the animation
+    setAnimatingCalendarId(calendarId);
+    
+    // Wait for animation
+    setTimeout(async () => {
+      // Mark calendar as removed so it doesn't render anymore
+      if (isMounted.current) {
+        setRemovedCalendarIds(prev => new Set([...prev, calendarId]));
+        setAnimatingCalendarId(null);
+      }
+      
+      try {
+        // Make the actual API call to unsubscribe
+        const { error } = await supabase
+          .from('subscriptions')
+          .delete()
+          .eq('calendar_id', calendarId)
+          .eq('user_id', user.id);
+  
+        if (error) throw error;
+  
+        // Call parent callback to update state
+        if (isMounted.current) {
+          onUnsubscribe(calendarId);
+          toast.success('Successfully unsubscribed from calendar');
+        }
+      } catch (err) {
+        console.error('Error unsubscribing:', err);
+        // If error, restore the calendar
+        if (isMounted.current) {
+          setRemovedCalendarIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(calendarId);
+            return newSet;
+          });
+          toast.error('Failed to unsubscribe from calendar');
+        }
+      }
+    }, 500); // Match this with the animation duration
   };
 
   const handleEventClick = (calendarId: string) => {
@@ -114,12 +147,16 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
 
       <div className="p-4">
         <div className="mb-6 space-y-2">
-          {calendars.map(calendar => {
+          {visibleCalendars.map(calendar => {
             const bannerStyle = getBannerStyle(calendar.banner);
+            const isAnimating = animatingCalendarId === calendar.id;
+            
             return (
               <div 
                 key={calendar.id}
-                className="flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
+                className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-50 transition-all ${
+                  isAnimating ? 'animate-fly-away' : ''
+                }`}
                 style={{ backgroundColor: bannerStyle.backgroundColor }}
                 onClick={(e) => handleCalendarClick(calendar.id, e)}
               >
@@ -147,7 +184,8 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
                     e.stopPropagation();
                     handleUnsubscribe(calendar.id);
                   }}
-                  className="p-1 opacity-75 hover:opacity-100 transition-opacity"
+                  disabled={isAnimating || !!animatingCalendarId}
+                  className="p-1 opacity-75 hover:opacity-100 transition-opacity disabled:opacity-50"
                   style={{ color: bannerStyle.color }}
                   title="Unsubscribe"
                 >

@@ -1,6 +1,7 @@
 import { isValidCalendarUrl, convertToIcsUrl } from '../utils/calendarUrl';
 import { supabase } from '../lib/supabase';
 import { parseRecurrenceRule } from '../utils/recurrenceParser';
+import { getGoogleToken, refreshGoogleToken } from '../utils/googleAuth';
 
 export interface CalendarEvent {
   id: string;
@@ -29,6 +30,16 @@ export async function fetchGoogleCalendarEvents(calendarUrl: string): Promise<Ca
   const icsUrl = convertToIcsUrl(calendarUrl);
 
   try {
+    // Check if token is valid before making request
+    const token = await getGoogleToken();
+    if (!token) {
+      // Try to refresh token
+      const refreshed = await refreshGoogleToken();
+      if (!refreshed) {
+        console.warn('Token refresh failed, proceeding without authentication');
+      }
+    }
+    
     // Call the CORS proxy function with retries
     const response = await fetchWithRetries(icsUrl);
     
@@ -54,7 +65,19 @@ async function fetchWithRetries(icsUrl: string, maxRetries = 3): Promise<any> {
         body: { calendarUrl: icsUrl }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to authentication
+        if (error.message && error.message.toLowerCase().includes('auth')) {
+          // Try to refresh token
+          const refreshed = await refreshGoogleToken();
+          if (!refreshed && attempt === maxRetries - 1) {
+            throw new Error('Google Calendar authentication expired. Please reconnect your account.');
+          }
+        } else {
+          throw error;
+        }
+      }
+      
       return data;
     } catch (err) {
       lastError = err;

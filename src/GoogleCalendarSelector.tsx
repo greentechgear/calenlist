@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Loader, AlertCircle, RefreshCw } from 'lucide-react';
-import { refreshGoogleToken } from '../../utils/googleAuth';
-import { toast } from '../../utils/toast';
+import { refreshGoogleToken } from './utils/googleAuth';
+import { toast } from './utils/toast';
 
 interface GoogleCalendar {
   id: string;

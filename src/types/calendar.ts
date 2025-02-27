@@ -10,6 +10,11 @@ export interface Calendar {
   profiles?: {
     display_name: string;
   };
+  calendar_stats?: Array<{
+    subscriber_count: number;
+    view_count?: number;
+  }>;
+  subscriber_count?: number;
 }
 
 export interface CalendarEvent {
@@ -21,4 +26,12 @@ export interface CalendarEvent {
   calendarName?: string;
   isRecurring?: boolean;
   recurrenceRule?: string;
+}
+
+export interface CalendarBanner {
+  id: string;
+  name: string;
+  color: string;
+  textColor: string;
+  pattern: string;
 }

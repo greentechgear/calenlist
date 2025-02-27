@@ -15,6 +15,9 @@ interface CalendarCardProps {
     profiles?: {
       display_name: string;
     };
+    calendar_stats?: Array<{
+      subscriber_count: number;
+    }>;
   };
   onUpdate: () => void;
 }
@@ -23,6 +26,11 @@ export default function CalendarCard({ calendar, onUpdate }: CalendarCardProps) 
   const { category } = useCalendarCategory(calendar.category_id);
   const bannerStyle = getBannerStyle(calendar.banner);
   const [showMenu, setShowMenu] = useState(false);
+
+  // Get subscriber count from either direct property or calendar_stats
+  const subscriberCount = typeof calendar.subscriber_count !== 'undefined' 
+    ? calendar.subscriber_count 
+    : calendar.calendar_stats?.[0]?.subscriber_count || 0;
 
   const handleMenuClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent card navigation
@@ -108,7 +116,7 @@ export default function CalendarCard({ calendar, onUpdate }: CalendarCardProps) 
           <div className="flex items-center">
             <div className="flex items-center text-sm text-gray-600">
               <Users className="h-4 w-4 mr-2" />
-              {calendar.subscriber_count || 0} subscribers
+              {subscriberCount} subscribers
             </div>
           </div>
         </div>

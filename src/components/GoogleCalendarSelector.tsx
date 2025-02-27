@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Loader, AlertCircle, RefreshCw } from 'lucide-react';
-import { refreshGoogleToken } from '../../utils/googleAuth';
-import { toast } from '../../utils/toast';
+import { supabase } from '../lib/supabase';
+import { refreshGoogleToken } from '../utils/googleAuth';
+import { toast } from '../utils/toast';
 
 interface GoogleCalendar {
   id: string;
@@ -91,9 +92,7 @@ export default function GoogleCalendarSelector({ onSelect, selectedId }: GoogleC
         authUrl.searchParams.append('response_type', 'token');
         authUrl.searchParams.append('scope', 'https://www.googleapis.com/auth/calendar');
         authUrl.searchParams.append('prompt', 'consent');
-        
-        // Store current path to return to
-        sessionStorage.setItem('calendar_return_to', window.location.pathname);
+        authUrl.searchParams.append('access_type', 'offline');
         
         window.location.href = authUrl.toString();
       }

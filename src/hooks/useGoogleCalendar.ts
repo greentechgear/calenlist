@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchGoogleCalendarEvents, CalendarEvent } from '../services/googleCalendarService';
+import { isGoogleTokenExpired, refreshGoogleToken } from '../utils/googleAuth';
 
 const POLLING_INTERVAL = 60000; // Poll every minute
 const MAX_RETRIES = 3;
@@ -20,6 +21,12 @@ export function useGoogleCalendar(calendarUrl: string) {
 
     try {
       setError(null);
+      
+      // Check if Google token is expired and refresh if needed
+      if (isGoogleTokenExpired()) {
+        await refreshGoogleToken();
+      }
+      
       const calendarEvents = await fetchGoogleCalendarEvents(calendarUrl);
       setEvents(calendarEvents);
       setRetryCount(0); // Reset retry count on success

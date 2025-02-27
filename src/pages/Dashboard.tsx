@@ -11,24 +11,14 @@ import SEO from '../components/SEO';
 import { Calendar } from '../types/calendar';
 import { toast } from '../utils/toast';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
-import PendingInvites from '../components/dashboard/PendingInvites';
 import MyCalendars from '../components/dashboard/MyCalendars';
 import { getGoogleCalendarSubscribeUrl } from '../utils/calendarUrl';
-
-interface CalendarInvite {
-  id: string;
-  calendar: Calendar;
-  sender: {
-    display_name: string | null;
-  };
-}
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [subscribedCalendars, setSubscribedCalendars] = useState<Calendar[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<CalendarInvite[]>([]);
   const [popularCalendars, setPopularCalendars] = useState<Calendar[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [totalSubscribers, setTotalSubscribers] = useState(0);
@@ -63,60 +53,12 @@ export default function Dashboard() {
         fetchCalendars(),
         fetchSubscribedCalendars(),
         loadPopularCalendars(),
-        fetchUserProfile(),
-        fetchPendingInvites()
+        fetchUserProfile()
       ]).finally(() => {
         setLoading(false);
       });
     }
   }, [user]);
-
-  const fetchPendingInvites = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .rpc('get_pending_invites', {
-          p_user_id: user.id
-        });
-
-      if (error) throw error;
-      setPendingInvites(data || []);
-    } catch (err) {
-      console.error('Error fetching pending invites:', err);
-    }
-  };
-
-  const handleAcceptInvite = async (inviteId: string, calendar: Calendar) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .rpc('accept_calendar_invite', {
-          p_invite_id: inviteId,
-          p_user_id: user.id
-        });
-
-      if (error) throw error;
-
-      if (data) {
-        // Open Google Calendar subscription window
-        window.open(getGoogleCalendarSubscribeUrl(calendar.google_calendar_url), '_blank');
-
-        // Refresh data
-        await Promise.all([
-          fetchPendingInvites(),
-          fetchSubscribedCalendars()
-        ]);
-        toast.success('Calendar invite accepted successfully');
-      } else {
-        toast.error('Failed to accept invite. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error accepting invite:', err);
-      toast.error('Failed to accept calendar invite');
-    }
-  };
 
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -164,21 +106,41 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
+      // Get all user's calendars with their subscriber counts
       const { data: calendarsData, error } = await supabase
         .from('calendars')
         .select(`
           *, 
-          profiles!calendars_user_id_fkey(display_name), 
-          calendar_stats!inner(subscriber_count)
+          profiles!calendars_user_id_fkey(display_name),
+          calendar_stats(subscriber_count)
         `)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setCalendars(calendarsData || []);
-      setTotalSubscribers(
-        calendarsData?.reduce((acc, cal) => acc + (cal.calendar_stats?.[0]?.subscriber_count || 0), 0) || 0
-      );
+      if (calendarsData && calendarsData.length > 0) {
+        let totalSubscriberCount = 0;
+
+        // Process each calendar to ensure subscriber_count is directly accessible
+        const processedCalendars = calendarsData.map(calendar => {
+          // Extract subscriber count from calendar_stats
+          const subscriberCount = calendar.calendar_stats?.[0]?.subscriber_count || 0;
+          
+          // Add to running total
+          totalSubscriberCount += Number(subscriberCount);
+          
+          return {
+            ...calendar,
+            subscriber_count: subscriberCount
+          };
+        });
+
+        setCalendars(processedCalendars);
+        setTotalSubscribers(totalSubscriberCount);
+      } else {
+        setCalendars([]);
+        setTotalSubscribers(0);
+      }
     } catch (err) {
       console.error('Error fetching calendars:', err);
       toast.error('Failed to load your calendars');
@@ -196,13 +158,24 @@ export default function Dashboard() {
             *,
             profiles!calendars_user_id_fkey (
               display_name
-            )
+            ),
+            calendar_stats(subscriber_count)
           )
         `)
         .eq('user_id', user.id);
 
       if (error) throw error;
-      setSubscribedCalendars(data?.map(sub => sub.calendar).filter(Boolean) || []);
+      
+      // Process the subscribed calendars to include subscriber_count directly
+      const processedSubscribedCalendars = data?.map(sub => {
+        const calendar = sub.calendar;
+        return {
+          ...calendar,
+          subscriber_count: calendar.calendar_stats?.[0]?.subscriber_count || 0
+        };
+      }).filter(Boolean) || [];
+      
+      setSubscribedCalendars(processedSubscribedCalendars);
     } catch (error) {
       console.error('Error fetching subscribed calendars:', error);
       toast.error('Failed to load your subscriptions');
@@ -236,12 +209,6 @@ export default function Dashboard() {
         <DashboardHeader
           displayName={displayName}
           onAddCalendar={() => setIsModalOpen(true)}
-        />
-
-        <PendingInvites
-          invites={pendingInvites}
-          onAcceptInvite={handleAcceptInvite}
-          onViewCalendar={(calendarId) => navigate(`/calendar/${calendarId}`)}
         />
 
         {/* Subscribed Calendars */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Users, Star, ArrowRight, ExternalLink } from 'lucide-react';
 import { getBannerStyle } from '../../lib/banner/utils';
 import CategoryBadge from '../CategoryBadge';
 import PaymentInfo from '../calendar/PaymentInfo';
@@ -21,6 +21,11 @@ export default function TopCalendars({ calendars }: TopCalendarsProps) {
             !calendar.payment_type || 
             calendar.payment_type === 'free' || 
             (calendar.subscriber_count && calendar.subscriber_count >= 10);
+            
+          // Get subscriber count from either direct property or calendar_stats
+          const subscriberCount = typeof calendar.subscriber_count !== 'undefined' 
+            ? calendar.subscriber_count 
+            : calendar.calendar_stats?.[0]?.subscriber_count || 0;
 
           return (
             <Link
@@ -76,7 +81,7 @@ export default function TopCalendars({ calendars }: TopCalendarsProps) {
                       style={{ color: bannerStyle.color }}
                     >
                       <Users className="h-4 w-4 mr-1" />
-                      <span>{calendar.subscriber_count || 0} subscribers</span>
+                      <span>{subscriberCount} subscribers</span>
                     </div>
                   )}
                   
