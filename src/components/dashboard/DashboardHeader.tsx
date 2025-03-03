@@ -7,7 +7,7 @@ const welcomeIcons = [
   { icon: Star, color: 'text-amber-500' },
   { icon: Sun, color: 'text-orange-500' },
   { icon: Moon, color: 'text-indigo-500' },
-  { icon: Coffee, color: 'text-brown-600' },
+  { icon: Coffee, color: 'text-amber-700' },
   { icon: Sparkles, color: 'text-purple-500' },
   { icon: Calendar, color: 'text-purple-600' }
 ];

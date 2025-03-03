@@ -1,6 +1,6 @@
-import React from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, isBefore, isAfter } from 'date-fns';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, isBefore, isAfter } from 'date-fns';
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar';
 import EventChiclet from '../calendar/EventChiclet';
 import { Calendar as CalendarType } from '../../types/calendar';
@@ -32,14 +32,12 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
   const start = startOfMonth(today);
   const end = endOfMonth(today);
   const days = eachDayOfInterval({ start, end });
-
-  // Create an array to store calendar data with events
-  const calendarData: CalendarData[] = [];
+  const [isUnsubscribing, setIsUnsubscribing] = useState(false);
   
-  // Process each calendar separately
-  calendars.forEach(calendar => {
+  // Build calendar data for visible calendars
+  const calendarData = calendars.map(calendar => {
     const { events = [], loading = false, error = null } = useGoogleCalendar(calendar.google_calendar_url);
-    calendarData.push({
+    return {
       calendarId: calendar.id,
       calendarName: calendar.name,
       creatorName: calendar.profiles?.display_name,
@@ -47,16 +45,19 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
       events,
       loading,
       error
-    });
+    };
   });
 
   const isLoading = calendarData.some(cal => cal.loading);
   const hasErrors = calendarData.some(cal => cal.error);
 
   const handleUnsubscribe = async (calendarId: string) => {
-    if (!user) return;
-
+    if (!user || isUnsubscribing) return;
+    
+    setIsUnsubscribing(true);
+    
     try {
+      // Make the API call to unsubscribe
       const { error } = await supabase
         .from('subscriptions')
         .delete()
@@ -65,12 +66,19 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
 
       if (error) throw error;
 
-      // Call the onUnsubscribe callback to update parent state
+      // Call parent callback to update state
       onUnsubscribe(calendarId);
       toast.success('Successfully unsubscribed from calendar');
+      
+      // If no more calendars are visible, refresh the dashboard
+      if (calendars.length <= 1) {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err) {
       console.error('Error unsubscribing:', err);
       toast.error('Failed to unsubscribe from calendar');
+    } finally {
+      setIsUnsubscribing(false);
     }
   };
 
@@ -86,9 +94,10 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
     navigate(`/calendar/${calendarId}`);
   };
 
-  // Define weekdays starting with Monday
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Define weekdays starting with Sunday
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  // Important: Always declare all hooks at the top level, before any conditional returns
   if (calendars.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -116,10 +125,11 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
         <div className="mb-6 space-y-2">
           {calendars.map(calendar => {
             const bannerStyle = getBannerStyle(calendar.banner);
+            
             return (
               <div 
                 key={calendar.id}
-                className="flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-50 transition-all"
                 style={{ backgroundColor: bannerStyle.backgroundColor }}
                 onClick={(e) => handleCalendarClick(calendar.id, e)}
               >
@@ -147,7 +157,8 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
                     e.stopPropagation();
                     handleUnsubscribe(calendar.id);
                   }}
-                  className="p-1 opacity-75 hover:opacity-100 transition-opacity"
+                  disabled={isUnsubscribing}
+                  className="p-1 opacity-75 hover:opacity-100 transition-opacity disabled:opacity-50"
                   style={{ color: bannerStyle.color }}
                   title="Unsubscribe"
                 >
@@ -169,8 +180,8 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
           ))}
           
           {days.map((day) => {
-            // Calculate the day of week (0-6, where 0 is Monday)
-            const dayOfWeek = (day.getDay() + 6) % 7;
+            // Calculate the day of week (0-6, where 0 is Sunday)
+            const dayOfWeek = day.getDay();
 
             // Combine events from all calendars for this day
             const dayEvents = calendarData.flatMap(cal => 

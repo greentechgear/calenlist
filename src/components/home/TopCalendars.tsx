@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Users, Star, ArrowRight, ExternalLink } from 'lucide-react';
 import { getBannerStyle } from '../../lib/banner/utils';
 import CategoryBadge from '../CategoryBadge';
 import PaymentInfo from '../calendar/PaymentInfo';
@@ -8,12 +8,13 @@ import type { Calendar as CalendarType } from '../../types/calendar';
 
 interface TopCalendarsProps {
   calendars: CalendarType[];
+  title?: string;
 }
 
-export default function TopCalendars({ calendars }: TopCalendarsProps) {
+export default function TopCalendars({ calendars, title = "Popular Calendars" }: TopCalendarsProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Popular Calendars</h2>
+      {title && <h2 className="text-2xl font-bold text-gray-900 mb-6">{title}</h2>}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {calendars.map(calendar => {
           const bannerStyle = getBannerStyle(calendar.banner);
@@ -21,6 +22,11 @@ export default function TopCalendars({ calendars }: TopCalendarsProps) {
             !calendar.payment_type || 
             calendar.payment_type === 'free' || 
             (calendar.subscriber_count && calendar.subscriber_count >= 10);
+            
+          // Get subscriber count from either direct property or calendar_stats
+          const subscriberCount = typeof calendar.subscriber_count !== 'undefined' 
+            ? calendar.subscriber_count 
+            : calendar.calendar_stats?.[0]?.subscriber_count || 0;
 
           return (
             <Link
@@ -76,7 +82,7 @@ export default function TopCalendars({ calendars }: TopCalendarsProps) {
                       style={{ color: bannerStyle.color }}
                     >
                       <Users className="h-4 w-4 mr-1" />
-                      <span>{calendar.subscriber_count || 0} subscribers</span>
+                      <span>{subscriberCount} subscribers</span>
                     </div>
                   )}
                   

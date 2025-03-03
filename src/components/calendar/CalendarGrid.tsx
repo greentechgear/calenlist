@@ -19,8 +19,8 @@ export default function CalendarGrid({ googleCalendarUrl, isSubscribed, calendar
   const end = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start, end });
 
-  // Define weekdays starting with Monday
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Define weekdays starting with Sunday
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const handlePreviousMonth = () => {
     setCurrentMonth(prev => subMonths(prev, 1));
@@ -106,8 +106,8 @@ export default function CalendarGrid({ googleCalendarUrl, isSubscribed, calendar
                    isSameDay(eventEnd, day);
           });
 
-          // Calculate the day of week (0-6, where 0 is Monday)
-          const dayOfWeek = (day.getDay() + 6) % 7;
+          // Calculate the day of week (0-6, where 0 is Sunday)
+          const dayOfWeek = day.getDay();
 
           return (
             <div

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail } from 'lucide-react';
+import { X, Mail, Copy, Share2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Calendar } from '../../types/calendar';
 import { toast } from '../../utils/toast';
@@ -11,10 +11,12 @@ interface ShareCalendarModalProps {
 }
 
 export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareCalendarModalProps) {
+  if (!isOpen) return null;
+
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
 
-  if (!isOpen) return null;
+  const calendarUrl = `${window.location.origin}/calendar/${calendar.id}`;
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,12 +24,15 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
 
     setSending(true);
     try {
-      // Use the create_calendar_invite function
-      const { data, error } = await supabase
-        .rpc('create_calendar_invite', {
-          p_calendar_id: calendar.id,
-          p_recipient_email: email.toLowerCase().trim()
-        });
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Use the create_calendar_invite function instead of direct insert
+      const { data, error } = await supabase.rpc('create_calendar_invite', {
+        p_calendar_id: calendar.id,
+        p_recipient_email: email.toLowerCase().trim()
+      });
 
       if (error) throw error;
 
@@ -48,13 +53,22 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
       onClose();
     } catch (err) {
       console.error('Error sending invite:', err);
+      
+      // Handle duplicate key error gracefully
+      if (err instanceof Error && 
+          (err.message.includes('duplicate key value') || 
+           err.message.includes('Pending invite already exists'))) {
+        toast.info('An invitation has already been sent to this email address');
+        setEmail('');
+        onClose();
+        return;
+      }
+      
       toast.error('Failed to send invitation');
     } finally {
       setSending(false);
     }
   };
-
-  const calendarUrl = `${window.location.origin}/calendar/${calendar.id}`;
 
   const handleCopy = async () => {
     try {

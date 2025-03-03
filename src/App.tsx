@@ -16,6 +16,7 @@ import Privacy from './pages/Privacy';
 import Examples from './pages/Examples';
 import ResetPassword from './pages/ResetPassword';
 
+
 export default function App() {
   return (
     <HelmetProvider>

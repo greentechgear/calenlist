@@ -51,7 +51,7 @@ serve(async (req) => {
             <h2 style="color: #7C3AED; margin-bottom: 20px;">Calendar Invitation</h2>
             
             <p style="margin-bottom: 20px;">
-              Please signup with Calenlist. You've been invited to subscribe to the calendar "${calendarName}" on Calenlist.
+              You've been invited to subscribe to the calendar "${calendarName}" on Calenlist.
             </p>
 
             <div style="margin: 30px 0;">

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchGoogleCalendarEvents, CalendarEvent } from '../services/googleCalendarService';
+import { isGoogleTokenExpired, refreshGoogleToken } from '../utils/googleAuth';
 
 const POLLING_INTERVAL = 60000; // Poll every minute
 const MAX_RETRIES = 3;
@@ -10,8 +11,21 @@ export function useGoogleCalendar(calendarUrl: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [isFetching, setIsFetching] = useState(false);
 
   const fetchEvents = useCallback(async (isRetry = false) => {
+    // Prevent concurrent fetches
+    if (isFetching) {
+      return;
+    }
+    
+    // Prevent fetching too frequently (at least 5 seconds between fetches)
+    const now = Date.now();
+    if (now - lastFetchTime < 5000 && lastFetchTime > 0) {
+      return;
+    }
+    
     if (!calendarUrl) {
       setEvents([]);
       setLoading(false);
@@ -19,10 +33,18 @@ export function useGoogleCalendar(calendarUrl: string) {
     }
 
     try {
+      setIsFetching(true);
       setError(null);
+      
+      // Check if Google token is expired and refresh if needed
+      if (isGoogleTokenExpired()) {
+        await refreshGoogleToken();
+      }
+      
       const calendarEvents = await fetchGoogleCalendarEvents(calendarUrl);
       setEvents(calendarEvents);
       setRetryCount(0); // Reset retry count on success
+      setLastFetchTime(Date.now());
     } catch (err) {
       console.error('Error fetching calendar events:', err);
       
@@ -35,15 +57,19 @@ export function useGoogleCalendar(calendarUrl: string) {
       }
     } finally {
       setLoading(false);
+      setIsFetching(false);
     }
-  }, [calendarUrl, retryCount]);
+  }, [calendarUrl, retryCount, lastFetchTime, isFetching]);
 
   useEffect(() => {
     fetchEvents(true); // Initial fetch with retry enabled
     
-    // Set up polling
+    // Set up polling with a check to prevent too frequent fetches
     const intervalId = setInterval(() => {
-      fetchEvents(false); // Regular polling without retries
+      const now = Date.now();
+      if (now - lastFetchTime >= POLLING_INTERVAL) {
+        fetchEvents(false); // Regular polling without retries
+      }
     }, POLLING_INTERVAL);
 
     return () => {

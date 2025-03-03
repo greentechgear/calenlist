@@ -28,14 +28,23 @@ export default function CalendarLinks({ calendar, isSubscribed, onSubscriptionCh
     try {
       setSubscribing(true);
       
-      // Use the new handle_calendar_subscription function
-      const { data, error } = await supabase
-        .rpc('handle_calendar_subscription', {
-          p_user_id: user.id,
-          p_calendar_id: calendar.id
-        });
+      // Insert subscription directly instead of using RPC function
+      const { error } = await supabase
+        .from('subscriptions')
+        .insert([
+          { user_id: user.id, calendar_id: calendar.id }
+        ])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        // If subscription already exists, this is not an error
+        if (error.code === '23505') { // Unique violation error code
+          console.log('Subscription already exists');
+        } else {
+          throw error;
+        }
+      }
 
       // Open Google Calendar's "Add by URL" page
       window.open(getGoogleCalendarSubscribeUrl(calendar.google_calendar_url), '_blank');

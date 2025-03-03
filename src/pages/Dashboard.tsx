@@ -11,24 +11,13 @@ import SEO from '../components/SEO';
 import { Calendar } from '../types/calendar';
 import { toast } from '../utils/toast';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
-import PendingInvites from '../components/dashboard/PendingInvites';
-import MyCalendars from '../components/dashboard/MyCalendars';
 import { getGoogleCalendarSubscribeUrl } from '../utils/calendarUrl';
-
-interface CalendarInvite {
-  id: string;
-  calendar: Calendar;
-  sender: {
-    display_name: string | null;
-  };
-}
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [subscribedCalendars, setSubscribedCalendars] = useState<Calendar[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<CalendarInvite[]>([]);
   const [popularCalendars, setPopularCalendars] = useState<Calendar[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [totalSubscribers, setTotalSubscribers] = useState(0);
@@ -38,14 +27,25 @@ export default function Dashboard() {
   const [templateData, setTemplateData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for template parameter on mount
+  // Check for template parameter and Google Calendar state
   useEffect(() => {
     const templateId = searchParams.get('template');
     if (templateId && location.state?.template) {
       setTemplateData(location.state.template);
       setIsModalOpen(true);
     }
-  }, [searchParams, location.state]);
+
+    // Check if we should open calendar modal after Google auth
+    const openCalendarModal = searchParams.get('openCalendarModal');
+    if (openCalendarModal === 'true') {
+      setIsModalOpen(true);
+      // Clear the URL parameter
+      navigate(location.pathname, {
+        replace: true,
+        state: {}
+      });
+    }
+  }, [searchParams, location.state, navigate, location.pathname]);
 
   useEffect(() => {
     if (user) {
@@ -53,61 +53,12 @@ export default function Dashboard() {
         fetchCalendars(),
         fetchSubscribedCalendars(),
         loadPopularCalendars(),
-        fetchUserProfile(),
-        fetchPendingInvites()
+        fetchUserProfile()
       ]).finally(() => {
         setLoading(false);
       });
     }
   }, [user]);
-
-  const fetchPendingInvites = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .rpc('get_pending_invites', {
-          p_user_id: user.id
-        });
-
-      if (error) throw error;
-      setPendingInvites(data || []);
-    } catch (err) {
-      console.error('Error fetching pending invites:', err);
-      toast.error('Failed to load calendar invites');
-    }
-  };
-
-  const handleAcceptInvite = async (inviteId: string, calendar: Calendar) => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .rpc('accept_calendar_invite', {
-          p_invite_id: inviteId,
-          p_user_id: user.id
-        });
-
-      if (error) throw error;
-
-      if (data) {
-        // Open Google Calendar subscription window
-        window.open(getGoogleCalendarSubscribeUrl(calendar.google_calendar_url), '_blank');
-        
-        // Refresh data
-        await Promise.all([
-          fetchPendingInvites(),
-          fetchSubscribedCalendars()
-        ]);
-        toast.success('Calendar invite accepted successfully');
-      } else {
-        toast.error('Failed to accept invite. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error accepting invite:', err);
-      toast.error('Failed to accept calendar invite');
-    }
-  };
 
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -136,7 +87,7 @@ export default function Dashboard() {
           profiles!calendars_user_id_fkey (
             display_name
           ),
-          calendar_stats!inner (
+          calendar_stats (
             subscriber_count
           )
         `)
@@ -155,21 +106,41 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
+      // Get all user's calendars with their subscriber counts
       const { data: calendarsData, error } = await supabase
         .from('calendars')
         .select(`
           *, 
-          profiles!calendars_user_id_fkey(display_name), 
-          calendar_stats!inner(subscriber_count)
+          profiles!calendars_user_id_fkey(display_name),
+          calendar_stats(subscriber_count)
         `)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setCalendars(calendarsData || []);
-      setTotalSubscribers(
-        calendarsData?.reduce((acc, cal) => acc + (cal.calendar_stats?.[0]?.subscriber_count || 0), 0) || 0
-      );
+      if (calendarsData && calendarsData.length > 0) {
+        let totalSubscriberCount = 0;
+
+        // Process each calendar to ensure subscriber_count is directly accessible
+        const processedCalendars = calendarsData.map(calendar => {
+          // Extract subscriber count from calendar_stats
+          const subscriberCount = calendar.calendar_stats?.[0]?.subscriber_count || 0;
+          
+          // Add to running total
+          totalSubscriberCount += Number(subscriberCount);
+          
+          return {
+            ...calendar,
+            subscriber_count: subscriberCount
+          };
+        });
+
+        setCalendars(processedCalendars);
+        setTotalSubscribers(totalSubscriberCount);
+      } else {
+        setCalendars([]);
+        setTotalSubscribers(0);
+      }
     } catch (err) {
       console.error('Error fetching calendars:', err);
       toast.error('Failed to load your calendars');
@@ -187,13 +158,24 @@ export default function Dashboard() {
             *,
             profiles!calendars_user_id_fkey (
               display_name
-            )
+            ),
+            calendar_stats(subscriber_count)
           )
         `)
         .eq('user_id', user.id);
 
       if (error) throw error;
-      setSubscribedCalendars(data?.map(sub => sub.calendar).filter(Boolean) || []);
+      
+      // Process the subscribed calendars to include subscriber_count directly
+      const processedSubscribedCalendars = data?.map(sub => {
+        const calendar = sub.calendar;
+        return {
+          ...calendar,
+          subscriber_count: calendar.calendar_stats?.[0]?.subscriber_count || 0
+        };
+      }).filter(Boolean) || [];
+      
+      setSubscribedCalendars(processedSubscribedCalendars);
     } catch (error) {
       console.error('Error fetching subscribed calendars:', error);
       toast.error('Failed to load your subscriptions');
@@ -203,6 +185,13 @@ export default function Dashboard() {
   const handleTemplateSelect = (template: any) => {
     setTemplateData(template);
     setIsModalOpen(true);
+  };
+
+  const handleUnsubscribe = async (calendarId: string) => {
+    // Update the local state to remove the unsubscribed calendar
+    setSubscribedCalendars(prev => 
+      prev.filter(calendar => calendar.id !== calendarId)
+    );
   };
 
   if (loading) {
@@ -218,30 +207,24 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SEO 
-        title="Your Calendars" 
+      <SEO
+        title="Your Calendars"
         description="Manage your shared calendars and view subscriber statistics."
       />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <DashboardHeader 
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <DashboardHeader
           displayName={displayName}
           onAddCalendar={() => setIsModalOpen(true)}
-        />
-
-        <PendingInvites 
-          invites={pendingInvites}
-          onAcceptInvite={handleAcceptInvite}
-          onViewCalendar={(calendarId) => navigate(`/calendar/${calendarId}`)}
         />
 
         {/* Subscribed Calendars */}
         {subscribedCalendars.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Subscriptions</h2>
-            <CombinedCalendarView 
+            <CombinedCalendarView
               calendars={subscribedCalendars}
-              onUnsubscribe={fetchSubscribedCalendars}
+              onUnsubscribe={handleUnsubscribe}
             />
           </div>
         )}
@@ -252,10 +235,12 @@ export default function Dashboard() {
         )}
 
         {/* My Calendars */}
-        <MyCalendars 
-          calendars={calendars}
-          onUpdate={fetchCalendars}
-        />
+        {calendars.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Calendars</h2>
+            <TopCalendars calendars={calendars} title="" />
+          </div>
+        )}
 
         {/* Calendar Templates */}
         <div>
@@ -265,9 +250,7 @@ export default function Dashboard() {
 
         {/* Popular Calendars */}
         {popularCalendars.length > 0 && (
-          <div>
-            <TopCalendars calendars={popularCalendars} />
-          </div>
+          <TopCalendars calendars={popularCalendars} />
         )}
       </main>
 

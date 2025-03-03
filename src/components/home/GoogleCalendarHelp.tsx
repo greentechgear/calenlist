@@ -14,7 +14,7 @@ export default function GoogleCalendarHelp({ isOpen, onClose }: GoogleCalendarHe
       <div className="bg-white rounded-lg max-w-2xl w-full">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">
-            How to Get Your Calendar's ICS URL
+            Sharing Your Calendar
           </h3>
           <button
             onClick={onClose}
@@ -28,14 +28,11 @@ export default function GoogleCalendarHelp({ isOpen, onClose }: GoogleCalendarHe
             <div className="flex items-start space-x-3">
               <Calendar className="h-6 w-6 text-purple-600 mt-1" />
               <div>
-                <h4 className="font-medium text-gray-900">From Google Calendar:</h4>
+                <h4 className="font-medium text-gray-900">Sharing Options:</h4>
                 <ol className="mt-2 space-y-2 text-gray-600">
-                  <li>1. Open Google Calendar</li>
-                  <li>2. Find your calendar in the left sidebar</li>
-                  <li>3. Click the three dots next to your calendar</li>
-                  <li>4. Select "Settings and sharing"</li>
-                  <li>5. Make your calendar public by checking "Make available to public"</li>
-                  <li>6. Scroll to "Integrate calendar" and copy the "Secret address in iCal format"</li>
+                  <li>1. <strong>Email Invitations</strong>: Send direct invitations to specific people</li>
+                  <li>2. <strong>Share Link</strong>: Copy and share your calendar's unique URL</li>
+                  <li>3. <strong>Public Listing</strong>: Make your calendar discoverable in the Calenlist directory</li>
                 </ol>
               </div>
             </div>
@@ -43,9 +40,24 @@ export default function GoogleCalendarHelp({ isOpen, onClose }: GoogleCalendarHe
             <div className="flex items-start space-x-3">
               <LinkIcon className="h-6 w-6 text-purple-600 mt-1" />
               <div>
-                <h4 className="font-medium text-gray-900">Example URL format:</h4>
-                <p className="mt-2 text-sm text-gray-600 break-all font-mono">
-                  https://calendar.google.com/calendar/ical/[calendar-id]/private-[key]/basic.ics
+                <h4 className="font-medium text-gray-900">Privacy Controls:</h4>
+                <p className="mt-2 text-gray-600">
+                  You can control who sees your calendar and what information is visible:
+                </p>
+                <ul className="mt-2 space-y-1 text-gray-600 list-disc list-inside">
+                  <li>Set calendars as public or private</li>
+                  <li>Control visibility of event locations</li>
+                  <li>Choose who can subscribe to your calendar</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="h-6 w-6 text-purple-600 mt-1" />
+              <div>
+                <h4 className="font-medium text-gray-900">Important Note:</h4>
+                <p className="mt-2 text-gray-600">
+                  Calenlist connects directly to your Google Calendar. Any changes you make in Google Calendar will automatically sync to Calenlist.
                 </p>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { isValidCalendarUrl, convertToIcsUrl } from '../utils/calendarUrl';
 import { supabase } from '../lib/supabase';
 import { parseRecurrenceRule } from '../utils/recurrenceParser';
+import { getGoogleToken, refreshGoogleToken } from '../utils/googleAuth';
 
 export interface CalendarEvent {
   id: string;
@@ -13,6 +14,13 @@ export interface CalendarEvent {
   calendarName?: string;
   creatorName?: string;
 }
+
+// Track failed URLs to prevent repeated retries
+const failedUrls = new Set<string>();
+const MAX_FAILURES = 3;
+const failureCount: Record<string, number> = {};
+const lastAttemptTime: Record<string, number> = {};
+const RETRY_COOLDOWN = 60000; // 1 minute cooldown between retries for failed URLs
 
 export async function fetchGoogleCalendarEvents(calendarUrl: string): Promise<CalendarEvent[]> {
   if (!calendarUrl) {
@@ -28,12 +36,34 @@ export async function fetchGoogleCalendarEvents(calendarUrl: string): Promise<Ca
   // Convert to ICS format if needed
   const icsUrl = convertToIcsUrl(calendarUrl);
 
+  // Check if this URL is in cooldown period
+  const now = Date.now();
+  if (failedUrls.has(icsUrl)) {
+    const lastAttempt = lastAttemptTime[icsUrl] || 0;
+    if (now - lastAttempt < RETRY_COOLDOWN) {
+      console.log(`URL ${icsUrl} is in cooldown period, skipping fetch`);
+      return [];
+    }
+    // Remove from failed URLs after cooldown
+    failedUrls.delete(icsUrl);
+  }
+
   try {
+    // Check if token is valid before making request
+    const token = await getGoogleToken();
+    if (!token) {
+      // Try to refresh token
+      const refreshed = await refreshGoogleToken();
+      if (!refreshed) {
+        console.warn('Token refresh failed, proceeding without authentication');
+      }
+    }
+    
     // Call the CORS proxy function with retries
     const response = await fetchWithRetries(icsUrl);
     
     if (!response?.data) {
-      console.error('No data received from CORS proxy');
+      console.warn('No data received from calendar fetch');
       return [];
     }
 
@@ -41,24 +71,76 @@ export async function fetchGoogleCalendarEvents(calendarUrl: string): Promise<Ca
     return events;
   } catch (error) {
     console.error('Error fetching calendar events:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent infinite retries
+    return [];
   }
 }
 
 async function fetchWithRetries(icsUrl: string, maxRetries = 3): Promise<any> {
+  // Check if this URL has already failed too many times
+  if (failedUrls.has(icsUrl)) {
+    return { data: null };
+  }
+  
   let lastError;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      // Update last attempt time
+      lastAttemptTime[icsUrl] = Date.now();
+      
+      // Try direct fetch first as it's more reliable
+      try {
+        const response = await fetch(icsUrl, {
+          headers: {
+            'Accept': 'text/calendar',
+            'User-Agent': 'Calenlist/1.0'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.text();
+          // Reset failure count on success
+          failureCount[icsUrl] = 0;
+          return { data };
+        }
+      } catch (directFetchError) {
+        console.warn('Direct fetch failed:', directFetchError);
+        // Continue to Supabase function attempt
+      }
+      
+      // Fall back to Supabase function
       const { data, error } = await supabase.functions.invoke('cors-proxy', {
         body: { calendarUrl: icsUrl }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to authentication
+        if (error.message && error.message.toLowerCase().includes('auth')) {
+          // Try to refresh token
+          const refreshed = await refreshGoogleToken();
+          if (!refreshed && attempt === maxRetries - 1) {
+            throw new Error('Google Calendar authentication expired. Please reconnect your account.');
+          }
+        } else {
+          throw error;
+        }
+      }
+      
       return data;
     } catch (err) {
       lastError = err;
       console.warn(`Attempt ${attempt + 1} failed:`, err);
+      
+      // Track failure count for this URL
+      failureCount[icsUrl] = (failureCount[icsUrl] || 0) + 1;
+      
+      // If we've failed too many times, add to failed URLs set
+      if (failureCount[icsUrl] >= MAX_FAILURES) {
+        failedUrls.add(icsUrl);
+        console.error(`Too many failures for URL ${icsUrl}, will not retry again soon`);
+        break;
+      }
       
       if (attempt < maxRetries - 1) {
         // Wait before retrying (exponential backoff)
@@ -67,7 +149,8 @@ async function fetchWithRetries(icsUrl: string, maxRetries = 3): Promise<any> {
     }
   }
 
-  throw lastError;
+  // Return empty data instead of throwing
+  return { data: null };
 }
 
 function parseICS(icsData: string): CalendarEvent[] {

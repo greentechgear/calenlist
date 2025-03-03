@@ -26,6 +26,5 @@ Thumbs.db
 
 # Supabase
 .supabase/
-supabase/migrations/
 
 .bolt/

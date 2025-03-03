@@ -7,6 +7,10 @@ interface DashboardStatsProps {
 }
 
 export default function DashboardStats({ totalSubscribers, totalCalendars }: DashboardStatsProps) {
+  // Format the numbers for better display
+  const formattedSubscribers = totalSubscribers.toLocaleString();
+  const formattedCalendars = totalCalendars.toLocaleString();
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -16,7 +20,7 @@ export default function DashboardStats({ totalSubscribers, totalCalendars }: Das
           </div>
           <div className="ml-4">
             <h3 className="text-lg font-medium text-gray-900">Total Subscribers</h3>
-            <p className="text-2xl font-semibold text-purple-600">{totalSubscribers}</p>
+            <p className="text-2xl font-semibold text-purple-600">{formattedSubscribers}</p>
           </div>
         </div>
       </div>
@@ -28,7 +32,7 @@ export default function DashboardStats({ totalSubscribers, totalCalendars }: Das
           </div>
           <div className="ml-4">
             <h3 className="text-lg font-medium text-gray-900">Active Calendars</h3>
-            <p className="text-2xl font-semibold text-purple-600">{totalCalendars}</p>
+            <p className="text-2xl font-semibold text-purple-600">{formattedCalendars}</p>
           </div>
         </div>
       </div>
