@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar } from '../../types/calendar';
-import CalendarCard from '../CalendarCard';
+import TopCalendars from '../home/TopCalendars';
 
 interface MyCalendarsProps {
   calendars: Calendar[];
@@ -13,15 +13,10 @@ export default function MyCalendars({ calendars, onUpdate }: MyCalendarsProps) {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-6">My Calendars</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {calendars.map((calendar) => (
-          <CalendarCard
-            key={calendar.id}
-            calendar={calendar}
-            onUpdate={onUpdate}
-          />
-        ))}
-      </div>
+      <TopCalendars 
+        calendars={calendars} 
+        title="" // Empty title since we already have the heading above
+      />
     </div>
   );
 }

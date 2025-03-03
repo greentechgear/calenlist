@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Globe, Lock, Plus, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -29,6 +29,7 @@ const REDIRECT_URI = `${window.location.origin}/google-callback.html`;
 export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: AddCalendarModalProps) {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -41,6 +42,7 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
   const [selectedGoogleCalendar, setSelectedGoogleCalendar] = useState<{ id: string; summary: string } | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const providerToken = localStorage.getItem('google_token');
   const isConnected = !!providerToken;
@@ -61,13 +63,16 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
       setError('');
       setSelectedGoogleCalendar(null);
       setIsCreatingNew(true);
+      setValidationErrors({});
     }
   }, [isOpen, template]);
 
   const handleGoogleAuth = async () => {
     try {
       setIsConnecting(true);
+      // Store current path and modal state to return to
       sessionStorage.setItem('calendar_return_to', location.pathname);
+      sessionStorage.setItem('open_calendar_modal', 'true');
 
       // Try to refresh token first if we have one
       if (providerToken) {
@@ -199,6 +204,8 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
       skipUrlValidation: true
     });
 
+    setValidationErrors(errors);
+
     if (Object.keys(errors).length > 0) {
       const firstErrorElement = document.querySelector('[aria-invalid="true"]');
       if (firstErrorElement) {
@@ -265,6 +272,7 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
     setError('');
     setSelectedGoogleCalendar(null);
     setIsCreatingNew(true);
+    setValidationErrors({});
   };
 
   const handleClose = () => {
@@ -384,6 +392,7 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
                 <CategorySelector
                   selectedId={categoryId}
                   onChange={setCategoryId}
+                  error={validationErrors.categoryId}
                 />
               </div>
 

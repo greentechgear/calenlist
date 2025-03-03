@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, Calendar, Link as LinkIcon, Globe, ChevronRight, Users, Lock } from 'lucide-react';
+import { HelpCircle, Calendar, Link as LinkIcon, Globe, ChevronRight, Users, Lock, Mail } from 'lucide-react';
 import GoogleCalendarHelp from './GoogleCalendarHelp';
 
 const faqs = [
@@ -7,38 +7,25 @@ const faqs = [
     question: 'How do I create and share a calendar?',
     steps: [
       {
-        title: 'Create a Google Calendar',
-        description: 'Go to calendar.google.com and create a new calendar for your events',
-        link: 'https://calendar.google.com/calendar/u/0/r/settings/createcalendar',
-        linkText: 'Create Calendar',
+        title: 'Connect Google Calendar',
+        description: 'Sign in and connect your Google Calendar account with Calenlist',
         icon: Calendar
       },
       {
-        title: 'Make it Public',
-        description: 'In calendar settings, select "Make available to public" to allow others to view your events',
+        title: 'Create or Select Calendar',
+        description: 'Create a new calendar or select an existing one from your Google Calendar account',
         icon: Globe
       },
       {
-        title: 'Copy Calendar URL',
-        description: (
-          <div className="space-y-2">
-            <p>Copy the secret address in iCal URL format</p>
-            <button
-              type="button"
-              className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
-            >
-              <HelpCircle className="h-4 w-4 mr-1" />
-              Show me the link
-            </button>
-          </div>
-        ),
-        icon: LinkIcon,
-        showHelp: true
+        title: 'Choose Visibility',
+        description: 'Set your calendar as public or private depending on who you want to share it with',
+        icon: LinkIcon
       },
       {
-        title: 'Add to Calenlist',
-        description: 'Create a new calendar on Calenlist and paste your Google Calendar URL',
-        icon: ChevronRight
+        title: 'Share with Others',
+        description: 'Share your calendar link or send email invitations to friends and family',
+        icon: ChevronRight,
+        showHelp: true
       }
     ]
   },
@@ -51,13 +38,13 @@ const faqs = [
         icon: Lock
       },
       {
-        title: 'Share the Link',
-        description: 'Copy your calendar\'s unique URL and share it only with people you want to have access',
-        icon: LinkIcon
+        title: 'Send Invitations',
+        description: 'Use the "Share Calendar" option to send email invitations to specific people',
+        icon: Mail
       },
       {
-        title: 'Subscriber Access',
-        description: 'Only people with the link can subscribe to your calendar and see your events',
+        title: 'Recipient Access',
+        description: 'Recipients will receive an email with a link to view and subscribe to your calendar',
         icon: Users
       }
     ]

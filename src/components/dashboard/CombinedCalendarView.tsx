@@ -32,22 +32,10 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
   const start = startOfMonth(today);
   const end = endOfMonth(today);
   const days = eachDayOfInterval({ start, end });
-  const [removedCalendarIds, setRemovedCalendarIds] = useState<Set<string>>(new Set());
-  const [animatingCalendarId, setAnimatingCalendarId] = useState<string | null>(null);
-  const isMounted = useRef(true);
-  
-  // When component unmounts, set isMounted to false to prevent state updates
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  // Create a filtered calendar list that excludes removed calendars
-  const visibleCalendars = calendars.filter(calendar => !removedCalendarIds.has(calendar.id));
+  const [isUnsubscribing, setIsUnsubscribing] = useState(false);
   
   // Build calendar data for visible calendars
-  const calendarData = visibleCalendars.map(calendar => {
+  const calendarData = calendars.map(calendar => {
     const { events = [], loading = false, error = null } = useGoogleCalendar(calendar.google_calendar_url);
     return {
       calendarId: calendar.id,
@@ -64,47 +52,34 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
   const hasErrors = calendarData.some(cal => cal.error);
 
   const handleUnsubscribe = async (calendarId: string) => {
-    if (!user || animatingCalendarId) return;
+    if (!user || isUnsubscribing) return;
     
-    // Start the animation
-    setAnimatingCalendarId(calendarId);
+    setIsUnsubscribing(true);
     
-    // Wait for animation
-    setTimeout(async () => {
-      // Mark calendar as removed so it doesn't render anymore
-      if (isMounted.current) {
-        setRemovedCalendarIds(prev => new Set([...prev, calendarId]));
-        setAnimatingCalendarId(null);
-      }
+    try {
+      // Make the API call to unsubscribe
+      const { error } = await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('calendar_id', calendarId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Call parent callback to update state
+      onUnsubscribe(calendarId);
+      toast.success('Successfully unsubscribed from calendar');
       
-      try {
-        // Make the actual API call to unsubscribe
-        const { error } = await supabase
-          .from('subscriptions')
-          .delete()
-          .eq('calendar_id', calendarId)
-          .eq('user_id', user.id);
-  
-        if (error) throw error;
-  
-        // Call parent callback to update state
-        if (isMounted.current) {
-          onUnsubscribe(calendarId);
-          toast.success('Successfully unsubscribed from calendar');
-        }
-      } catch (err) {
-        console.error('Error unsubscribing:', err);
-        // If error, restore the calendar
-        if (isMounted.current) {
-          setRemovedCalendarIds(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(calendarId);
-            return newSet;
-          });
-          toast.error('Failed to unsubscribe from calendar');
-        }
+      // If no more calendars are visible, refresh the dashboard
+      if (calendars.length <= 1) {
+        navigate('/dashboard', { replace: true });
       }
-    }, 500); // Match this with the animation duration
+    } catch (err) {
+      console.error('Error unsubscribing:', err);
+      toast.error('Failed to unsubscribe from calendar');
+    } finally {
+      setIsUnsubscribing(false);
+    }
   };
 
   const handleEventClick = (calendarId: string) => {
@@ -119,9 +94,10 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
     navigate(`/calendar/${calendarId}`);
   };
 
-  // Define weekdays starting with Monday
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Define weekdays starting with Sunday
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  // Important: Always declare all hooks at the top level, before any conditional returns
   if (calendars.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -147,16 +123,13 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
 
       <div className="p-4">
         <div className="mb-6 space-y-2">
-          {visibleCalendars.map(calendar => {
+          {calendars.map(calendar => {
             const bannerStyle = getBannerStyle(calendar.banner);
-            const isAnimating = animatingCalendarId === calendar.id;
             
             return (
               <div 
                 key={calendar.id}
-                className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-50 transition-all ${
-                  isAnimating ? 'animate-fly-away' : ''
-                }`}
+                className="flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-50 transition-all"
                 style={{ backgroundColor: bannerStyle.backgroundColor }}
                 onClick={(e) => handleCalendarClick(calendar.id, e)}
               >
@@ -184,7 +157,7 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
                     e.stopPropagation();
                     handleUnsubscribe(calendar.id);
                   }}
-                  disabled={isAnimating || !!animatingCalendarId}
+                  disabled={isUnsubscribing}
                   className="p-1 opacity-75 hover:opacity-100 transition-opacity disabled:opacity-50"
                   style={{ color: bannerStyle.color }}
                   title="Unsubscribe"
@@ -207,8 +180,8 @@ export default function CombinedCalendarView({ calendars, onUnsubscribe }: Combi
           ))}
           
           {days.map((day) => {
-            // Calculate the day of week (0-6, where 0 is Monday)
-            const dayOfWeek = (day.getDay() + 6) % 7;
+            // Calculate the day of week (0-6, where 0 is Sunday)
+            const dayOfWeek = day.getDay();
 
             // Combine events from all calendars for this day
             const dayEvents = calendarData.flatMap(cal => 

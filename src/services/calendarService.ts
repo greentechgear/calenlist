@@ -73,7 +73,7 @@ export async function getTopCalendars(limit = 6): Promise<Calendar[]> {
           profiles!calendars_user_id_fkey (
             display_name
           ),
-          calendar_stats!inner (
+          calendar_stats (
             subscriber_count
           )
         `)

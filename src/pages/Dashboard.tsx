@@ -11,7 +11,6 @@ import SEO from '../components/SEO';
 import { Calendar } from '../types/calendar';
 import { toast } from '../utils/toast';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
-import MyCalendars from '../components/dashboard/MyCalendars';
 import { getGoogleCalendarSubscribeUrl } from '../utils/calendarUrl';
 
 export default function Dashboard() {
@@ -37,15 +36,16 @@ export default function Dashboard() {
     }
 
     // Check if we should open calendar modal after Google auth
-    if (location.state?.openCalendarModal) {
+    const openCalendarModal = searchParams.get('openCalendarModal');
+    if (openCalendarModal === 'true') {
       setIsModalOpen(true);
-      // Clear the state
+      // Clear the URL parameter
       navigate(location.pathname, {
         replace: true,
         state: {}
       });
     }
-  }, [searchParams, location.state, navigate]);
+  }, [searchParams, location.state, navigate, location.pathname]);
 
   useEffect(() => {
     if (user) {
@@ -87,7 +87,7 @@ export default function Dashboard() {
           profiles!calendars_user_id_fkey (
             display_name
           ),
-          calendar_stats!inner (
+          calendar_stats (
             subscriber_count
           )
         `)
@@ -187,6 +187,13 @@ export default function Dashboard() {
     setIsModalOpen(true);
   };
 
+  const handleUnsubscribe = async (calendarId: string) => {
+    // Update the local state to remove the unsubscribed calendar
+    setSubscribedCalendars(prev => 
+      prev.filter(calendar => calendar.id !== calendarId)
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -217,7 +224,7 @@ export default function Dashboard() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Subscriptions</h2>
             <CombinedCalendarView
               calendars={subscribedCalendars}
-              onUnsubscribe={fetchSubscribedCalendars}
+              onUnsubscribe={handleUnsubscribe}
             />
           </div>
         )}
@@ -228,10 +235,12 @@ export default function Dashboard() {
         )}
 
         {/* My Calendars */}
-        <MyCalendars
-          calendars={calendars}
-          onUpdate={fetchCalendars}
-        />
+        {calendars.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">My Calendars</h2>
+            <TopCalendars calendars={calendars} title="" />
+          </div>
+        )}
 
         {/* Calendar Templates */}
         <div>
@@ -241,9 +250,7 @@ export default function Dashboard() {
 
         {/* Popular Calendars */}
         {popularCalendars.length > 0 && (
-          <div>
-            <TopCalendars calendars={popularCalendars} />
-          </div>
+          <TopCalendars calendars={popularCalendars} />
         )}
       </main>
 

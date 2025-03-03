@@ -11,11 +11,20 @@
 
             localStorage.setItem('google_token', accessToken);
 
+            // Check if we should open the calendar modal
+            const openCalendarModal = sessionStorage.getItem('open_calendar_modal');
             const returnTo = sessionStorage.getItem('calendar_return_to') || '/dashboard';
+            
+            // Clear the session storage
             sessionStorage.removeItem('calendar_return_to');
+            sessionStorage.removeItem('open_calendar_modal');
 
-            window.location.replace(returnTo);
-
+            // If we should open the calendar modal, add state to the URL
+            if (openCalendarModal === 'true') {
+                window.location.replace(returnTo + '?openCalendarModal=true');
+            } else {
+                window.location.replace(returnTo);
+            }
         }
     } catch (error) {
         console.error('Error handling callback:', error);

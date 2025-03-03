@@ -19,8 +19,8 @@ const features = [
   },
   {
     icon: CreditCard,
-    title: "Flexible Monetization",
-    description: "Calenlist is free to use. Optionally charge for events or offer premium subscriptions - you keep 90% of the revenue."
+    title: "Simple & Free",
+    description: "Calenlist is free to use. Create calendars, share events, and build your community without any hidden costs."
   }
 ];
 
@@ -62,26 +62,22 @@ export default function MarketingSection() {
         {/* Pricing Details */}
         <div className="mt-16 text-center">
           <div className="inline-flex items-center justify-center px-6 py-3 bg-purple-50 rounded-full">
-            <span className="text-purple-700 font-medium">Free to use, optional paid features</span>
+            <span className="text-purple-700 font-medium">Free to use, with simple subscription options</span>
           </div>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto text-center">
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto text-center">
             <div className="p-4">
               <h4 className="font-semibold text-gray-900">Free Plan</h4>
               <p className="text-gray-600 text-sm mt-2">Create and share unlimited calendars with your audience</p>
             </div>
             <div className="p-4">
-              <h4 className="font-semibold text-gray-900">Paid Events</h4>
-              <p className="text-gray-600 text-sm mt-2">Charge per event, you keep 90% of ticket sales</p>
-            </div>
-            <div className="p-4">
-              <h4 className="font-semibold text-gray-900">Premium Access</h4>
-              <p className="text-gray-600 text-sm mt-2">Offer monthly subscriptions to your calendar</p>
+              <h4 className="font-semibold text-gray-900">Calendar Subscriptions</h4>
+              <p className="text-gray-600 text-sm mt-2">Let others subscribe to your calendars to stay updated with your events</p>
             </div>
           </div>
         </div>
 
         {/* Anti-Social Media Callout */}
-        <div className="mt-16 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-8 text-center">
+        <div className="mt-12 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-8 text-center">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">
             Meet People in Their Calendars, Not Their Feeds
           </h3>

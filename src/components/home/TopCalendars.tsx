@@ -8,12 +8,13 @@ import type { Calendar as CalendarType } from '../../types/calendar';
 
 interface TopCalendarsProps {
   calendars: CalendarType[];
+  title?: string;
 }
 
-export default function TopCalendars({ calendars }: TopCalendarsProps) {
+export default function TopCalendars({ calendars, title = "Popular Calendars" }: TopCalendarsProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Popular Calendars</h2>
+      {title && <h2 className="text-2xl font-bold text-gray-900 mb-6">{title}</h2>}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {calendars.map(calendar => {
           const bannerStyle = getBannerStyle(calendar.banner);
