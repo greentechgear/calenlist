@@ -119,15 +119,10 @@ export default function Dashboard() {
       if (error) throw error;
 
       if (calendarsData && calendarsData.length > 0) {
-        let totalSubscriberCount = 0;
-
         // Process each calendar to ensure subscriber_count is directly accessible
         const processedCalendars = calendarsData.map(calendar => {
           // Extract subscriber count from calendar_stats
           const subscriberCount = calendar.calendar_stats?.[0]?.subscriber_count || 0;
-          
-          // Add to running total
-          totalSubscriberCount += Number(subscriberCount);
           
           return {
             ...calendar,
@@ -136,7 +131,11 @@ export default function Dashboard() {
         });
 
         setCalendars(processedCalendars);
-        setTotalSubscribers(totalSubscriberCount);
+
+        // Calculate total subscribers by summing up all subscriber counts
+        const total = processedCalendars.reduce((sum, calendar) => 
+          sum + (calendar.subscriber_count || 0), 0);
+        setTotalSubscribers(total);
       } else {
         setCalendars([]);
         setTotalSubscribers(0);
