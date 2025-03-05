@@ -37,12 +37,10 @@ export default function EventFeedbackForm({
         .eq('calendar_id', calendarId)
         .eq('event_id', eventId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to handle no rows gracefully
 
-      if (error) {
-        if (error.code !== 'PGRST116') { // Not found error
-          console.error('Error checking feedback:', error);
-        }
+      if (error && error.code !== 'PGRST116') { // Ignore "no rows" error
+        console.error('Error checking feedback:', error);
         return;
       }
 
@@ -70,6 +68,16 @@ export default function EventFeedbackForm({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Get user's display name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .single();
+
+      const userDisplayName = profile?.display_name || 'A user';
+
+      // Submit feedback
       const { error: submitError } = await supabase
         .from('event_feedback')
         .upsert([{
@@ -83,6 +91,20 @@ export default function EventFeedbackForm({
         });
 
       if (submitError) throw submitError;
+
+      // Send notification
+      const { error: notifyError } = await supabase.functions.invoke('send-feedback-notification', {
+        body: {
+          calendarId,
+          rating,
+          comment: comment.trim(),
+          userDisplayName
+        }
+      });
+
+      if (notifyError) {
+        console.error('Error sending notification:', notifyError);
+      }
 
       setSuccess(true);
       toast.success('Feedback submitted successfully');

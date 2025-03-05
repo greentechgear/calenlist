@@ -1,3 +1,5 @@
+import { CalendarBanner } from './banner';
+
 export interface Calendar {
   id: string;
   user_id: string;
@@ -36,6 +38,7 @@ export interface CalendarEvent {
   creatorName?: string;
   isRecurring?: boolean;
   recurrenceRule?: string;
+  allDay?: boolean;
 }
 
 export interface CalendarBanner {

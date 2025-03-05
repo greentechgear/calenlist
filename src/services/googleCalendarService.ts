@@ -13,6 +13,7 @@ export interface CalendarEvent {
   recurrenceRule?: string;
   calendarName?: string;
   creatorName?: string;
+  allDay?: boolean;
 }
 
 // Track failed URLs to prevent repeated retries
@@ -172,6 +173,14 @@ function parseICS(icsData: string): CalendarEvent[] {
       currentEvent = {};
     } else if (currentLine === 'END:VEVENT' && currentEvent) {
       if (currentEvent.id && currentEvent.title && currentEvent.start && currentEvent.end) {
+        // For all-day events, adjust the end date
+        if (currentEvent.allDay) {
+          // Subtract one day from the end date for all-day events
+          const endDate = new Date(currentEvent.end);
+          endDate.setDate(endDate.getDate() - 1);
+          currentEvent.end = endDate;
+        }
+
         // If event has recurrence rule, expand it
         if (currentEvent.recurrenceRule) {
           const expandedEvents = parseRecurrenceRule(currentEvent as CalendarEvent, currentEvent.recurrenceRule);
@@ -205,6 +214,8 @@ function parseICS(icsData: string): CalendarEvent[] {
           break;
         case 'DTSTART':
           currentEvent.start = parseICSDateTime(value, parameters);
+          // Check if it's an all-day event (no time component)
+          currentEvent.allDay = !value.includes('T');
           break;
         case 'DTEND':
           currentEvent.end = parseICSDateTime(value, parameters);

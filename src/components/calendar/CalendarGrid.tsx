@@ -100,7 +100,12 @@ export default function CalendarGrid({ googleCalendarUrl, isSubscribed, calendar
             const eventStart = new Date(event.start);
             const eventEnd = new Date(event.end);
             
-            // Check if this day falls within the event's duration
+            // For all-day events, check if the day matches the start date
+            if (event.allDay) {
+              return isSameDay(day, eventStart);
+            }
+            
+            // For timed events, check if this day falls within the event's duration
             return isWithinInterval(day, { start: eventStart, end: eventEnd }) ||
                    isSameDay(eventStart, day) ||
                    isSameDay(eventEnd, day);

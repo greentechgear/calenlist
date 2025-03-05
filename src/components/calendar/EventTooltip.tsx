@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { CalendarEvent } from '../../types/calendar';
 import { escapeHtml, createSafeHtml } from '../../utils/security';
@@ -58,6 +58,15 @@ export default function EventTooltip({
     };
   }, []);
 
+  // Format date range
+  const isSameDay = format(event.start, 'yyyy-MM-dd') === format(event.end, 'yyyy-MM-dd');
+  const dateRangeText = isSameDay
+    ? `${format(event.start, 'MMMM d, yyyy')}`
+    : `${format(event.start, 'MMMM d')} - ${format(event.end, 'MMMM d, yyyy')}`;
+
+  // Format time range
+  const timeRangeText = `${format(event.start, 'h:mm a')} - ${format(event.end, 'h:mm a')}`;
+
   return (
     <div
       ref={tooltipRef}
@@ -74,11 +83,16 @@ export default function EventTooltip({
       onTouchStart={onMouseEnter}
       onTouchEnd={onMouseLeave}
     >
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <h3 className="text-base font-semibold">{escapeHtml(event.title)}</h3>
-        <div className="flex items-center text-sm text-gray-300 whitespace-nowrap">
-          <Clock className="h-4 w-4 mr-1.5" />
-          <span>{format(event.start, 'h:mm a')}</span>
+      <h3 className="text-lg font-semibold mb-3">{escapeHtml(event.title)}</h3>
+
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center text-gray-300">
+          <Calendar className="h-4 w-4 mr-2" />
+          <span>{dateRangeText}</span>
+        </div>
+        <div className="flex items-center text-gray-300">
+          <Clock className="h-4 w-4 mr-2" />
+          <span>{timeRangeText}</span>
         </div>
       </div>
 
