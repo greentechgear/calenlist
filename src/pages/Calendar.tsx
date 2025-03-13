@@ -131,6 +131,8 @@ export default function Calendar() {
         title={pageTitle}
         description={pageDescription}
         type="article"
+        url={window.location.href}
+        image={calendar?.banner?.image || 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1200&h=630&q=80'}
       />
       
       <div className="relative min-h-screen">
