@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Loader, AlertCircle, RefreshCw } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { refreshGoogleToken } from '../utils/googleAuth';
 import { toast } from '../utils/toast';
+import { GOOGLE_API_CONFIG } from '../config/google';
 
 interface GoogleCalendar {
   id: string;
@@ -84,10 +84,9 @@ export default function GoogleCalendarSelector({ onSelect, selectedId }: GoogleC
       } else {
         // If refresh failed, trigger new OAuth flow
         const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-        const GOOGLE_CLIENT_ID = '302687386632-bld8ojodac1nj3t8qor27vvcl3j0hpqd.apps.googleusercontent.com';
         const REDIRECT_URI = `${window.location.origin}/google-callback.html`;
         
-        authUrl.searchParams.append('client_id', GOOGLE_CLIENT_ID);
+        authUrl.searchParams.append('client_id', GOOGLE_API_CONFIG.CLIENT_ID);
         authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
         authUrl.searchParams.append('response_type', 'token');
         authUrl.searchParams.append('scope', 'https://www.googleapis.com/auth/calendar');
