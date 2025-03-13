@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Download, Users, MessageSquare } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { fetchSubscribers } from '../../services/subscriberService';
 import { fetchEventFeedback } from '../../services/feedbackService';
 import { downloadCsv } from '../../utils/csvUtils';

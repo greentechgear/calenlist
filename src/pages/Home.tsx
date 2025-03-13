@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import TopCalendars from '../components/home/TopCalendars';
 import AnimatedBackground from '../components/home/AnimatedBackground';
 import MarketingSection from '../components/MarketingSection';
 import IntegrationSteps from '../components/home/IntegrationSteps';
@@ -17,7 +16,6 @@ import CategoryBadge from '../components/CategoryBadge';
 export default function Home() {
   const { user } = useAuth();
   const [popularCalendars, setPopularCalendars] = useState<CalendarType[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadPopularCalendars();
@@ -29,8 +27,6 @@ export default function Home() {
       setPopularCalendars(calendars);
     } catch (error) {
       console.error('Error loading popular calendars:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

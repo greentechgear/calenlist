@@ -1,5 +1,3 @@
-import { CalendarBanner } from '../../types/banner';
-
 // Define pattern types
 export type PatternType = 
   | 'dots'
@@ -42,17 +40,3 @@ export const patterns: Record<PatternType, string> = {
 
   none: 'none'
 };
-
-// Get pattern URL for a given type
-export function getBannerPattern(pattern: PatternType = 'none'): string {
-  return patterns[pattern] || patterns.none;
-}
-
-// Get background style object for a banner
-export function getBannerBackground(banner: CalendarBanner) {
-  return {
-    backgroundColor: banner.color,
-    backgroundImage: getBannerPattern(banner.pattern),
-    color: banner.textColor,
-  };
-}

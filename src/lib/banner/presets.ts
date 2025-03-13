@@ -1,5 +1,4 @@
 import { CalendarBanner } from '../../types/banner';
-import { PatternType } from './patterns';
 
 export const bannerPresets: CalendarBanner[] = [
   {

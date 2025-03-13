@@ -1,5 +1,3 @@
-import { toast } from './toast';
-
 // Store token expiration time
 const TOKEN_STORAGE_KEY = 'google_token';
 const TOKEN_EXPIRY_KEY = 'google_token_expiry';
@@ -7,7 +5,7 @@ const TOKEN_EXPIRY_KEY = 'google_token_expiry';
 /**
  * Saves the Google token with expiration time
  */
-export function saveGoogleToken(token: string, expiresIn: number = 3600) {
+function saveGoogleToken(token: string, expiresIn: number = 3600) {
   // Store the token
   localStorage.setItem(TOKEN_STORAGE_KEY, token);
   

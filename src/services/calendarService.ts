@@ -1,4 +1,4 @@
-import { supabase, supabaseQuery } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import type { Calendar } from '../types/calendar';
 import { CalendarBanner } from '../types/banner';
 
