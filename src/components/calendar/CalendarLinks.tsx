@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { Calendar as CalendarType } from '../../types/calendar';
-import { Twitch, Youtube, Calendar, Users, Globe2, Mail, Bell, Lock, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Twitch, Youtube, Calendar, Users, Globe2, Bell, Lock } from 'lucide-react';
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar';
 import NextEventCountdown from './NextEventCountdown';
 import SubscriptionPrompt from '../../components/SubscriptionPrompt';
@@ -20,7 +20,6 @@ export default function CalendarLinks({ calendar, isSubscribed, onSubscriptionCh
   const { user } = useAuth();
   const { events } = useGoogleCalendar(calendar.google_calendar_url);
   const [subscribing, setSubscribing] = useState(false);
-  const [resendingVerification, setResendingVerification] = useState(false);
 
   const handleSubscribe = async () => {
     if (!user) return;
@@ -79,28 +78,6 @@ export default function CalendarLinks({ calendar, isSubscribed, onSubscriptionCh
     }
   };
 
-  const handleResendVerification = async () => {
-    if (!user?.email) return;
-
-    try {
-      setResendingVerification(true);
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: user.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard?email_confirmed=true`
-        }
-      });
-
-      if (error) throw error;
-      toast.success('Verification email sent! Please check your inbox and spam folder');
-    } catch (err) {
-      console.error('Error resending verification:', err);
-      toast.error('Failed to resend verification email');
-    } finally {
-      setResendingVerification(false);
-    }
-  };
 
   return (
     <div className="space-y-6">

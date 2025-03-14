@@ -1,4 +1,4 @@
-import { addDays, addWeeks, addMonths, addYears, startOfDay, endOfDay } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { CalendarEvent } from '../services/googleCalendarService';
 
 interface RecurrenceRule {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { X, Globe, Lock, Plus, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -11,6 +11,7 @@ import GoogleCalendarSelector from './GoogleCalendarSelector';
 import { validateCalendarForm } from '../utils/calendarValidation';
 import { toast } from '../utils/toast';
 import { refreshGoogleToken } from '../utils/googleAuth';
+import { GOOGLE_API_CONFIG } from '../config/google';
 
 interface AddCalendarModalProps {
   isOpen: boolean;
@@ -23,13 +24,11 @@ interface AddCalendarModalProps {
   } | null;
 }
 
-const GOOGLE_CLIENT_ID = '302687386632-bld8ojodac1nj3t8qor27vvcl3j0hpqd.apps.googleusercontent.com';
 const REDIRECT_URI = `${window.location.origin}/google-callback.html`;
 
 export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: AddCalendarModalProps) {
   const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -86,7 +85,7 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
 
       // If no token or refresh failed, do full auth
       const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-      authUrl.searchParams.append('client_id', GOOGLE_CLIENT_ID);
+      authUrl.searchParams.append('client_id', GOOGLE_API_CONFIG.CLIENT_ID);
       authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
       authUrl.searchParams.append('response_type', 'token');
       authUrl.searchParams.append('scope', 'https://www.googleapis.com/auth/calendar');
@@ -318,11 +317,10 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
                 <button
                   type="button"
                   onClick={() => setIsCreatingNew(true)}
-                  className={`px-4 py-2 rounded-md ${
-                    isCreatingNew
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-md ${isCreatingNew
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                 >
                   <Plus className="h-4 w-4 inline-block mr-1" />
                   Create New Calendar
@@ -330,11 +328,10 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
                 <button
                   type="button"
                   onClick={() => setIsCreatingNew(false)}
-                  className={`px-4 py-2 rounded-md ${
-                    !isCreatingNew
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-md ${!isCreatingNew
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                 >
                   Use Existing Calendar
                 </button>
@@ -404,11 +401,10 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
                   <button
                     type="button"
                     onClick={() => setIsPublic(true)}
-                    className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
-                      isPublic
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
+                    className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${isPublic
+                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
                   >
                     <Globe className="h-4 w-4 mr-2" />
                     <span className="font-medium">Public</span>
@@ -416,11 +412,10 @@ export default function AddCalendarModal({ isOpen, onClose, onAdd, template }: A
                   <button
                     type="button"
                     onClick={() => setIsPublic(false)}
-                    className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${
-                      !isPublic
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
+                    className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg ${!isPublic
+                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
                   >
                     <Lock className="h-4 w-4 mr-2" />
                     <span className="font-medium">Private</span>

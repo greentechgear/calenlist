@@ -11,7 +11,6 @@ import SEO from '../components/SEO';
 import { Calendar } from '../types/calendar';
 import { toast } from '../utils/toast';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
-import { getGoogleCalendarSubscribeUrl } from '../utils/calendarUrl';
 
 export default function Dashboard() {
   const { user } = useAuth();

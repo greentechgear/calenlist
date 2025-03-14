@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Settings, BarChart3, Users, MapPin, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { checkSubscription } from '../services/subscriptionService';
-import { useGoogleCalendarInfo } from '../hooks/useGoogleCalendarInfo';
 import { Calendar as CalendarType } from '../types/calendar';
 import { getBannerStyle } from '../lib/banner/utils';
 import CalendarGrid from '../components/calendar/CalendarGrid';
@@ -15,7 +14,6 @@ import CalendarVideo from '../components/calendar/CalendarVideo';
 import CalendarVideoButton from '../components/calendar/CalendarVideoButton';
 import PrivateCalendarShare from '../components/calendar/PrivateCalendarShare';
 import ShareCalendarModal from '../components/settings/ShareCalendarModal';
-import PaymentInfo from '../components/calendar/PaymentInfo';
 import StatsModal from '../components/modals/StatsModal';
 import ShareButton from '../components/ShareButton';
 import SEO from '../components/SEO';
@@ -34,11 +32,8 @@ export default function Calendar() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { name: calendarName } = useGoogleCalendarInfo(
-    calendar?.google_calendar_url || ''
-  );
 
-  const pageTitle = calendar?.name || calendarName || 'Calendar';
+  const pageTitle = calendar?.name || 'Calendar';
   const pageDescription = `View and subscribe to ${pageTitle}. ${subscriberCount} subscriber${subscriberCount !== 1 ? 's' : ''}.`;
   const bannerStyle = getBannerStyle(calendar?.banner);
   const isOwner = user?.id === calendar?.user_id;
@@ -131,6 +126,8 @@ export default function Calendar() {
         title={pageTitle}
         description={pageDescription}
         type="article"
+        url={window.location.href}
+        image={calendar?.banner?.image || 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1200&h=630&q=80'}
       />
       
       <div className="relative min-h-screen">

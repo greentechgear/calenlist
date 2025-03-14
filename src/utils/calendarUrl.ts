@@ -1,5 +1,3 @@
-import { PatternType } from '../lib/banner/patterns';
-
 // Define valid calendar domains
 const VALID_CALENDAR_DOMAINS = [
   'calendar.google.com',
@@ -9,33 +7,6 @@ const VALID_CALENDAR_DOMAINS = [
   'p[0-9]{2}-caldav.icloud.com'
 ];
 
-/**
- * Masks a calendar URL for display by hiding sensitive parts
- */
-export function maskCalendarUrl(url: string): string {
-  if (!url) return '';
-  
-  try {
-    const urlObj = new URL(url);
-    
-    // For Google Calendar URLs
-    if (urlObj.hostname === 'calendar.google.com') {
-      const parts = urlObj.pathname.split('/');
-      // Mask the calendar ID/key portion
-      if (parts.length > 2) {
-        parts[parts.length - 1] = '****';
-        parts[parts.length - 2] = '****';
-        urlObj.pathname = parts.join('/');
-      }
-      return urlObj.toString();
-    }
-    
-    // For other services, mask everything after the domain
-    return `${urlObj.protocol}//${urlObj.hostname}/****`;
-  } catch (error) {
-    return url.substring(0, 20) + '...';
-  }
-}
 
 /**
  * Validates if a URL is a valid calendar URL
@@ -174,61 +145,4 @@ export function getGoogleCalendarSubscribeUrl(url: string): string {
   }
 
   return `https://calendar.google.com/calendar/u/0/r/settings/addbyurl?cid=${encodeURIComponent(icsUrl)}`;
-}
-
-/**
- * Formats an ICS URL for display (truncates if too long)
- */
-export function formatIcsUrl(url: string, maxLength = 50): string {
-  if (!url) return '';
-  if (url.length <= maxLength) return url;
-  
-  const start = url.substring(0, maxLength / 2 - 3);
-  const end = url.substring(url.length - maxLength / 2 + 3);
-  return `${start}...${end}`;
-}
-
-/**
- * Extracts calendar ID from various calendar URL formats
- */
-export function extractCalendarId(url: string): string {
-  if (!isValidCalendarUrl(url)) {
-    console.warn('Invalid calendar URL format');
-    return '';
-  }
-
-  try {
-    const urlObj = new URL(url);
-    
-    if (urlObj.hostname === 'calendar.google.com') {
-      // Handle embed URLs
-      if (url.includes('/calendar/embed')) {
-        const calendarId = urlObj.searchParams.get('src');
-        return calendarId ? decodeURIComponent(calendarId) : '';
-      }
-      
-      // Handle ICS URLs
-      const match = url.match(/\/calendar\/ical\/(.+?)\/.*\.ics$/);
-      if (match) {
-        return decodeURIComponent(match[1]);
-      }
-
-      // Handle settings URLs
-      if (url.includes('/calendar/u/0/r/settings/')) {
-        const parts = url.split('/');
-        return decodeURIComponent(parts[parts.length - 1]);
-      }
-
-      // Handle calendar home URLs
-      if (url.includes('/calendar/u/0/r')) {
-        const cid = urlObj.searchParams.get('cid');
-        return cid ? decodeURIComponent(cid) : '';
-      }
-    }
-    
-    return '';
-  } catch (error) {
-    console.warn('Error extracting calendar ID:', error);
-    return '';
-  }
 }

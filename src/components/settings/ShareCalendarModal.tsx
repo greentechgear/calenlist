@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Copy, Share2 } from 'lucide-react';
+import { X, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Calendar } from '../../types/calendar';
 import { toast } from '../../utils/toast';
@@ -29,7 +29,7 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
       if (!user) throw new Error('User not authenticated');
 
       // Use the create_calendar_invite function instead of direct insert
-      const { data, error } = await supabase.rpc('create_calendar_invite', {
+      const { error } = await supabase.rpc('create_calendar_invite', {
         p_calendar_id: calendar.id,
         p_recipient_email: email.toLowerCase().trim()
       });
@@ -96,19 +96,6 @@ export default function ShareCalendarModal({ isOpen, onClose, calendar }: ShareC
     } else {
       handleCopy();
     }
-  };
-
-  const handleEmailInvite = () => {
-    const subject = encodeURIComponent(`Subscribe to my calendar: ${calendar.name}`);
-    const body = encodeURIComponent(
-      `Hi!\n\n` +
-      `I just created a new calendar on Calenlist and would love for you to subscribe.\n\n` +
-      `You can view and subscribe to my events here:\n` +
-      `${calendarUrl}\n\n` +
-      `Best regards`
-    );
-
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   return (

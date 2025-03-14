@@ -1,4 +1,3 @@
-import React from 'react';
 import { Calendar } from '../../types/calendar';
 import TopCalendars from '../home/TopCalendars';
 
@@ -7,7 +6,7 @@ interface MyCalendarsProps {
   onUpdate: () => void;
 }
 
-export default function MyCalendars({ calendars, onUpdate }: MyCalendarsProps) {
+export default function MyCalendars({ calendars }: MyCalendarsProps) {
   if (!calendars.length) return null;
 
   return (

@@ -18,8 +18,6 @@ export function canLeaveFeedback(event: CalendarEvent, userId: string | undefine
 }
 
 export function getFeedbackEligibleEvents(events: CalendarEvent[], userId: string | undefined): CalendarEvent[] {
-  const now = new Date();
-  
   return events
     .filter(event => canLeaveFeedback(event, userId))
     .sort((a, b) => b.start.getTime() - a.start.getTime()); // Most recent first

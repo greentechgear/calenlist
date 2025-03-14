@@ -83,7 +83,6 @@ async function fetchWithRetries(icsUrl: string, maxRetries = 3): Promise<any> {
     return { data: null };
   }
   
-  let lastError;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -130,7 +129,6 @@ async function fetchWithRetries(icsUrl: string, maxRetries = 3): Promise<any> {
       
       return data;
     } catch (err) {
-      lastError = err;
       console.warn(`Attempt ${attempt + 1} failed:`, err);
       
       // Track failure count for this URL
@@ -158,7 +156,6 @@ function parseICS(icsData: string): CalendarEvent[] {
   const events: CalendarEvent[] = [];
   const lines = icsData.split(/\r\n|\n|\r/);
   let currentEvent: Partial<CalendarEvent> | null = null;
-  let currentValue = '';
 
   for (let i = 0; i < lines.length; i++) {
     let currentLine = lines[i].trim();

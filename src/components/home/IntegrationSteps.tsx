@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calendar, Bell, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, Bell } from 'lucide-react';
 import GoogleCalendarHelp from './GoogleCalendarHelp';
 
 const steps = [

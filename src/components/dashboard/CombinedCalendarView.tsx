@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, isBefore, isAfter } from 'date-fns';
 import { useGoogleCalendar } from '../../hooks/useGoogleCalendar';
@@ -13,16 +13,6 @@ import { toast } from '../../utils/toast';
 interface CombinedCalendarViewProps {
   calendars: CalendarType[];
   onUnsubscribe: (calendarId: string) => void;
-}
-
-interface CalendarData {
-  calendarId: string;
-  calendarName: string;
-  creatorName?: string;
-  banner?: any;
-  events: any[];
-  loading: boolean;
-  error: any;
 }
 
 export default function CombinedCalendarView({ calendars, onUnsubscribe }: CombinedCalendarViewProps) {

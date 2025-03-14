@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Mail } from 'lucide-react';
 import { Calendar } from '../../types/calendar';
 import ShareCalendarModal from './ShareCalendarModal';
 

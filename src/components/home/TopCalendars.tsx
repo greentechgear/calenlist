@@ -1,6 +1,5 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Users, Star, ArrowRight, ExternalLink } from 'lucide-react';
+import { Calendar, Users } from 'lucide-react';
 import { getBannerStyle } from '../../lib/banner/utils';
 import CategoryBadge from '../CategoryBadge';
 import PaymentInfo from '../calendar/PaymentInfo';

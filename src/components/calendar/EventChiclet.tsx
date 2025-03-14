@@ -1,4 +1,3 @@
-import React from 'react';
 import { format } from 'date-fns';
 import { MapPin, Repeat } from 'lucide-react';
 import { CalendarEvent } from '../../types/calendar';
@@ -18,7 +17,6 @@ interface EventChicletProps {
 export default function EventChiclet({ 
   event, 
   showLocation = false,
-  calendarId,
   color = '#7C3AED',
   isFirstDay = true,
   isLastDay = true,
