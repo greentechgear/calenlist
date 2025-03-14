@@ -31,7 +31,7 @@ export function escapeHtml(unsafe: string): string {
 /**
  * Validate and sanitize URLs
  */
-export function sanitizeUrl(url: string): string | null {
+function sanitizeUrl(url: string): string | null {
   try {
     const urlObj = new URL(url);
     
