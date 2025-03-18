@@ -121,7 +121,7 @@ export default function Dashboard() {
         // Process each calendar to ensure subscriber_count is directly accessible
         const processedCalendars = calendarsData.map(calendar => {
           // Extract subscriber count from calendar_stats
-          const subscriberCount = calendar.calendar_stats?.[0]?.subscriber_count || 0;
+          const subscriberCount = calendar.calendar_stats?.subscriber_count || 0;
           
           return {
             ...calendar,
@@ -165,13 +165,8 @@ export default function Dashboard() {
       if (error) throw error;
       
       // Process the subscribed calendars to include subscriber_count directly
-      const processedSubscribedCalendars = data?.map(sub => {
-        const calendar = sub.calendar;
-        return {
-          ...calendar,
-          subscriber_count: calendar.calendar_stats?.[0]?.subscriber_count || 0
-        };
-      }).filter(Boolean) || [];
+      const processedSubscribedCalendars = data?.map(sub => sub.calendar)
+        .filter(Boolean) || [];
       
       setSubscribedCalendars(processedSubscribedCalendars);
     } catch (error) {
