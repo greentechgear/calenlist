@@ -32,7 +32,7 @@ export default function Footer() {
               </li>
             </ul>
             <a 
-              href="https://github.com/greentechgear/calenlist" 
+              href="https://github.com/Calenlist/calenlist" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-sm text-gray-400 hover:text-gray-600 flex items-center sm:ml-8"

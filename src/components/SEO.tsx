@@ -8,6 +8,7 @@ interface SEOProps {
   image?: string;
   noindex?: boolean;
   url?: string;
+  isCalendarPage?: boolean;
 }
 
 export default function SEO({ 
@@ -16,11 +17,16 @@ export default function SEO({
   type = 'website',
   image = 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1200&h=630&q=80',
   noindex = false,
-  url
+  url,
+  isCalendarPage = false
 }: SEOProps) {
-  // Only append site name if it's not already the full site name
+  // For calendar pages, use the calendar name as the main title
+  // For other pages, append the site name unless it's already the full site name
   const siteTitle = 'Calenlist.com - Share your calendar, build your community';
-  const fullTitle = title === siteTitle ? title : `${title} | Calenlist.com`;
+  const fullTitle = isCalendarPage 
+    ? title 
+    : title === siteTitle ? title : `${title} | Calenlist.com`;
+
   const currentUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
 
   return (

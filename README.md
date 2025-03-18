@@ -21,7 +21,7 @@ Try Calenlist instantly with npm (requires [Node.js](https://nodejs.org/en/)):
 
 ```bash
 # Clone the repository
-git clone https://github.com/greentechgear/calenlist.git
+git clone https://github.com/Calenlist/calenlist
 
 # Install dependencies
 cd calenlist
@@ -29,13 +29,6 @@ npm install
 
 # Start the development server
 npm run dev
-```
-
-Or deploy with Docker:
-
-```bash
-docker build -t calenlist .
-docker run -p 3000:3000 calenlist
 ```
 
 ## Environment Setup
@@ -46,6 +39,9 @@ Create a `.env` file in the root directory with the following variables:
 # Supabase configuration
 VITE_SUPABASE_URL=your-project-url.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# Google OAuth configuration
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 
 # Email configuration (for signup notifications)
 ADMIN_EMAIL=your-admin-email@example.com
@@ -69,7 +65,6 @@ REPLY_TO_EMAIL=your-support-email@yourdomain.com
 
 ## Resources
 
-- 📚 [Documentation](https://github.com/greentechgear/calenlist/wiki)
 - 🔧 [Google Calendar Setup Guide](docs/google-calendar-setup.md)
 - 💡 [Example Calendars](https://calenlist.com/examples)
 
