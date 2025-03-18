@@ -25,7 +25,7 @@ export default function TopCalendars({ calendars, title = "Popular Calendars" }:
           // Get subscriber count from either direct property or calendar_stats
           const subscriberCount = typeof calendar.subscriber_count !== 'undefined' 
             ? calendar.subscriber_count 
-            : calendar.calendar_stats?.[0]?.subscriber_count || 0;
+            : calendar.calendar_stats?.subscriber_count || 0;
 
           return (
             <Link

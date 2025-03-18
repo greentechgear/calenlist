@@ -21,10 +21,10 @@ export interface Calendar {
   profiles?: {
     display_name: string;
   };
-  calendar_stats?: Array<{
+  calendar_stats?: {
     subscriber_count: number;
     view_count?: number;
-  }>;
+  };
   subscriber_count?: number;
 }
 
@@ -39,12 +39,4 @@ export interface CalendarEvent {
   isRecurring?: boolean;
   recurrenceRule?: string;
   allDay?: boolean;
-}
-
-export interface CalendarBanner {
-  id: string;
-  name: string;
-  color: string;
-  textColor: string;
-  pattern: string;
 }
